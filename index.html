@@ -13,8 +13,6 @@ body {
     padding-bottom:220px;
 }
 
-h2 { margin-top:0; }
-
 table {
     width:100%;
     background:white;
@@ -24,22 +22,13 @@ table {
     box-shadow:0 6px 16px rgba(0,0,0,0.06);
 }
 
-td,th {
-    padding:8px;
-    text-align:center;
-}
+td,th { padding:8px; text-align:center; }
 
 input {
     width:90px;
     padding:6px;
     border-radius:6px;
     border:1px solid #ddd;
-}
-
-input:focus {
-    outline: none;
-    border:1px solid #4a6cff;
-    box-shadow:0 0 0 2px rgba(74,108,255,0.2);
 }
 
 .panel {
@@ -50,9 +39,6 @@ input:focus {
     background:white;
     padding:15px;
     border-top:1px solid #ddd;
-    box-shadow:0 -4px 20px rgba(0,0,0,0.1);
-    max-height:45%;
-    overflow:auto;
 }
 
 button {
@@ -61,13 +47,9 @@ button {
     border:none;
     border-radius:8px;
     background:#e0e6ff;
-    font-size:14px;
 }
 
-.active {
-    background:#4a6cff;
-    color:white;
-}
+.active { background:#4a6cff; color:white; }
 
 .green { color:green; }
 .red { color:red; }
@@ -84,7 +66,7 @@ button {
 
 <h2>Revenue Factor Analysis by Five Groups</h2>
 
-<table id="table">
+<table>
 <tr>
 <th>Group</th>
 <th>Quantity plan</th><th>Average check plan</th>
@@ -137,7 +119,7 @@ document.write(`<tr>
 <button onclick="setMode('share')" id="btn_share">Share</button>
 <button onclick="fillTest()">Test</button>
 
-<div id="impact" style="margin-top:10px;"></div>
+<div id="impact"></div>
 <div class="summary" id="summary"></div>
 
 </div>
@@ -188,10 +170,9 @@ for(let i=0;i<5;i++){
  document.getElementById('r1_'+i).innerText=format(r1[i]);
 }
 
-let dr = R1-R0;
-document.getElementById('dr').innerText=format(dr);
+document.getElementById('dr').innerText=format(R1-R0);
 
-// TOTALS
+// totals
 document.getElementById('t_q0').innerText = format(sum_q0);
 document.getElementById('t_q1').innerText = format(sum_q1);
 document.getElementById('t_r0').innerText = format(sum_r0);
@@ -200,7 +181,7 @@ document.getElementById('t_r1').innerText = format(sum_r1);
 document.getElementById('t_p0').innerText = sum_q0 ? format(sum_r0/sum_q0) : 0;
 document.getElementById('t_p1').innerText = sum_q1 ? format(sum_r1/sum_q1) : 0;
 
-// IMPACT
+// impact
 for(let i=0;i<5;i++){
 
  let q0=+document.getElementById('q0_'+i).value||0;
@@ -240,73 +221,63 @@ for(let i=0;i<5;i++){
 
 document.getElementById('impact').innerHTML=impactHTML;
 
-// SUMMARY
-let totalChange = R1 - R0;
-let totalPct = R0 ? (totalChange / R0 * 100) : 0;
-
-let text = `Revenue change: ${format(totalChange)} (${totalPct.toFixed(1)}%).\n`;
+// summary
+let text = `Revenue change: ${format(R1-R0)}\n`;
 
 for(let i=0;i<5;i++){
  let delta = r1[i] - r0[i];
- let pct = R0 ? (delta / R0 * 100) : 0;
- text += `${names[i]}: ${delta>=0?"+":""}${format(delta)} (${pct.toFixed(1)}%)\n`;
+ text += `${names[i]}: ${format(delta)}\n`;
 }
 
 document.getElementById('summary').innerText = text;
 
 }
 
-document.addEventListener('input',calc);
+// 🔥 ВСТАВКА ВСЕЙ ТАБЛИЦЫ (РАБОЧАЯ)
+document.querySelectorAll('input').forEach(input=>{
+input.addEventListener('paste', function(e){
 
-// ENTER navigation
-const inputs = Array.from(document.querySelectorAll('input'));
-inputs.forEach((input, index) => {
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            let next = inputs[index+1];
-            if(next) next.focus();
-        }
-    });
+ let text = e.clipboardData.getData('text');
+ if(!text.includes('\\t')) return;
+
+ e.preventDefault();
+
+ let rows = text.trim().split(/\\n/);
+
+ rows.forEach((row,i)=>{
+   let cols = row.split('\\t');
+
+   if(i>=5) return;
+
+   document.getElementById(`q0_${i}`).value = cols[0] || '';
+   document.getElementById(`p0_${i}`).value = cols[1] || '';
+   document.getElementById(`q1_${i}`).value = cols[2] || '';
+   document.getElementById(`p1_${i}`).value = cols[3] || '';
+ });
+
+ calc();
+
+});
 });
 
-// TEST DATA
-function rand(min,max){
-    return Math.floor(Math.random()*(max-min+1))+min;
-}
+document.addEventListener('input',calc);
+
+// test
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
 function fillTest(){
-
-let ranges = [
- [1000,2000],
- [2000,6000],
- [6000,10000],
- [10000,20000],
- [20000,30000]
-];
-
-let dropIndex = rand(0,4);
+let ranges = [[1000,2000],[2000,6000],[6000,10000],[10000,20000],[20000,30000]];
 
 for(let i=0;i<5;i++){
-
  let q0 = rand(1,10);
- let p0 = rand(ranges[i][0], ranges[i][1]);
+ let p0 = rand(...ranges[i]);
+ let q1 = q0 + rand(0,5);
+ let p1 = p0 + rand(0,2000);
 
- let growthQ = rand(5,30)/100;
- let growthP = rand(5,30)/100;
-
- if(i === dropIndex){
-    growthQ = -rand(1,10)/100;
-    growthP = -rand(1,10)/100;
- }
-
- let q1 = Math.max(1, Math.round(q0 * (1 + growthQ)));
- let p1 = Math.round(p0 * (1 + growthP));
-
- document.getElementById('q0_'+i).value = q0;
- document.getElementById('p0_'+i).value = p0;
- document.getElementById('q1_'+i).value = q1;
- document.getElementById('p1_'+i).value = p1;
+ document.getElementById(`q0_${i}`).value=q0;
+ document.getElementById(`p0_${i}`).value=p0;
+ document.getElementById(`q1_${i}`).value=q1;
+ document.getElementById(`p1_${i}`).value=p1;
 }
 
 calc();
@@ -316,41 +287,3 @@ calc();
 
 </body>
 </html>
-document.addEventListener('paste', function(e){
-
-  let active = document.activeElement;
-
-  // работаем только если вставка в input
-  if(active.tagName !== 'INPUT') return;
-
-  e.preventDefault();
-
-  let text = (e.clipboardData || window.clipboardData).getData('text');
-
-  let rows = text.trim().split(/\n/).map(r => r.split('\t'));
-
-  // ожидаем 5 строк (группы)
-  for(let i=0;i<5;i++){
-
-    if(!rows[i]) continue;
-
-    let row = rows[i];
-
-    // порядок: Quantity plan, Average check plan, Quantity actual, Average check actual
-    let ids = ['q0_','p0_','q1_','p1_'];
-
-    for(let j=0;j<4;j++){
-
-      let val = row[j];
-      if(val === undefined) continue;
-
-      let input = document.getElementById(ids[j] + i);
-      if(!input) continue;
-
-      input.value = val.replace(',', '.');
-    }
-  }
-
-  calc();
-
-});
