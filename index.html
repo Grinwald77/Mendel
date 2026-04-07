@@ -13,9 +13,7 @@ body {
     padding-bottom:220px;
 }
 
-h2 {
-    margin-top:0;
-}
+h2 { margin-top:0; }
 
 table {
     width:100%;
@@ -44,7 +42,6 @@ input:focus {
     box-shadow:0 0 0 2px rgba(74,108,255,0.2);
 }
 
-/* panel */
 .panel {
     position:fixed;
     bottom:0;
@@ -87,7 +84,7 @@ button {
 
 <h2>Revenue Factor Analysis by Five Groups</h2>
 
-<table>
+<table id="table">
 <tr>
 <th>Group</th>
 <th>Quantity plan</th><th>Average check plan</th>
@@ -117,6 +114,16 @@ document.write(`<tr>
 }
 </script>
 
+<tr style="font-weight:bold;background:#eef2ff">
+<td>Total</td>
+<td id="t_q0"></td>
+<td id="t_p0"></td>
+<td id="t_q1"></td>
+<td id="t_p1"></td>
+<td id="t_r0"></td>
+<td id="t_r1"></td>
+</tr>
+
 </table>
 
 <div class="panel">
@@ -131,7 +138,6 @@ document.write(`<tr>
 <button onclick="fillTest()">Test</button>
 
 <div id="impact" style="margin-top:10px;"></div>
-
 <div class="summary" id="summary"></div>
 
 </div>
@@ -157,6 +163,9 @@ let R0=0, R1=0;
 let r0=[], r1=[];
 let impactHTML="";
 
+let sum_q0=0, sum_q1=0;
+let sum_r0=0, sum_r1=0;
+
 for(let i=0;i<5;i++){
 
  let q0=+document.getElementById('q0_'+i).value||0;
@@ -170,6 +179,11 @@ for(let i=0;i<5;i++){
  R0+=r0[i];
  R1+=r1[i];
 
+ sum_q0+=q0;
+ sum_q1+=q1;
+ sum_r0+=r0[i];
+ sum_r1+=r1[i];
+
  document.getElementById('r0_'+i).innerText=format(r0[i]);
  document.getElementById('r1_'+i).innerText=format(r1[i]);
 }
@@ -177,7 +191,16 @@ for(let i=0;i<5;i++){
 let dr = R1-R0;
 document.getElementById('dr').innerText=format(dr);
 
-// modes
+// TOTALS
+document.getElementById('t_q0').innerText = format(sum_q0);
+document.getElementById('t_q1').innerText = format(sum_q1);
+document.getElementById('t_r0').innerText = format(sum_r0);
+document.getElementById('t_r1').innerText = format(sum_r1);
+
+document.getElementById('t_p0').innerText = sum_q0 ? format(sum_r0/sum_q0) : 0;
+document.getElementById('t_p1').innerText = sum_q1 ? format(sum_r1/sum_q1) : 0;
+
+// IMPACT
 for(let i=0;i<5;i++){
 
  let q0=+document.getElementById('q0_'+i).value||0;
@@ -217,7 +240,7 @@ for(let i=0;i<5;i++){
 
 document.getElementById('impact').innerHTML=impactHTML;
 
-// summary
+// SUMMARY
 let totalChange = R1 - R0;
 let totalPct = R0 ? (totalChange / R0 * 100) : 0;
 
@@ -235,7 +258,7 @@ document.getElementById('summary').innerText = text;
 
 document.addEventListener('input',calc);
 
-// enter navigation
+// ENTER navigation
 const inputs = Array.from(document.querySelectorAll('input'));
 inputs.forEach((input, index) => {
     input.addEventListener('keydown', function(e) {
@@ -247,7 +270,7 @@ inputs.forEach((input, index) => {
     });
 });
 
-// test data
+// TEST DATA
 function rand(min,max){
     return Math.floor(Math.random()*(max-min+1))+min;
 }
