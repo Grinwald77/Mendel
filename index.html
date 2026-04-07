@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Шаблон номер один удачный</title>
+
+<style>
+body {
+    font-family: -apple-system, sans-serif;
+    background:#f4f6fa;
+    margin:0;
+    padding:15px;
+    padding-bottom:220px;
+}
+
+h2 {
+    margin-top:0;
+}
+
+table {
+    width:100%;
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+    font-size:14px;
+    box-shadow:0 6px 16px rgba(0,0,0,0.06);
+}
+
+td,th {
+    padding:8px;
+    text-align:center;
+}
+
+input {
+    width:75px;
+    padding:6px;
+    border-radius:6px;
+    border:1px solid #ddd;
+}
+
+input:focus {
+    outline: none;
+    border:1px solid #4a6cff;
+    box-shadow:0 0 0 2px rgba(74,108,255,0.2);
+}
+
+/* === фикс панель === */
+.panel {
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:white;
+    padding:15px;
+    border-top:1px solid #ddd;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.1);
+    max-height:45%;
+    overflow:auto;
+}
+
+button {
+    padding:6px 10px;
+    margin-right:5px;
+    border:none;
+    border-radius:8px;
+    background:#e0e6ff;
+    font-size:14px;
+}
+
+.active {
+    background:#4a6cff;
+    color:white;
+}
+
+.green { color:green; }
+.red { color:red; }
+
+.panel b {
+    font-size:16px;
+}
+
+.summary {
+    font-size:13px;
+    margin-top:10px;
+    white-space:pre-line;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Факторная модель выручки</h2>
+
+<table>
+<tr>
+<th>Группа</th>
+<th>Q план</th><th>P план</th>
+<th>Q факт</th><th>P факт</th>
+<th>R план</th><th>R факт</th>
+</tr>
+
+<script>
+let names=["0–2k","2–6k","6–10k","10–15k","15–20k"];
+
+for(let i=0;i<5;i++){
+document.write(`<tr>
+<td>${names[i]}</td>
+<td><input id="q0_${i}"></td>
+<td><input id="p0_${i}"></td>
+<td><input id="q1_${i}"></td>
+<td><input id="p1_${i}"></td>
+<td id="r0_${i}"></td>
+<td id="r1_${i}"></td>
+</tr>`);
+}
+</script>
+
+</table>
+
+<div class="panel">
+
+<div><b>Прирост выручки:</b> <span id="dr"></span> ₪</div>
+
+<br>
+
+<button onclick="setMode('money')" id="btn_money" class="active">₪</button>
+<button onclick="setMode('percent')" id="btn_percent">%</button>
+<button onclick="setMode('share')" id="btn_share">доли</button>
+<button onclick="fillTest()">тест</button>
+
+<div id="impact" style="margin-top:10px;"></div>
+
+<div class="summary" id="summary"></div>
+
+</div>
+
+<script>
+
+let mode="money";
+
+function setMode(m){
+    mode=m;
+    document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+    document.getElementById("btn_"+m).classList.add("active");
+    calc();
+}
+
+function format(num){
+ return num.toLocaleString('ru-RU');
+}
+
+function calc(){
+
+let R0=0, R1=0;
+let r0=[], r1=[];
+let impactHTML="";
+
+for(let i=0;i<5;i++){
+
+ let q0=+document.getElementById('q0_'+i).value||0;
+ let p0=+document.getElementById('p0_'+i).value||0;
+ let q1=+document.getElementById('q1_'+i).value||0;
+ let p1=+document.getElementById('p1_'+i).value||0;
+
+ r0[i]=q0*p0;
+ r1[i]=q1*p1;
+
+ R0+=r0[i];
+ R1+=r1[i];
+
+ document.getElementById('r0_'+i).innerText=format(r0[i]);
+ document.getElementById('r1_'+i).innerText=format(r1[i]);
+}
+
+let dr = R1-R0;
+document.getElementById('dr').innerText=format(dr);
+
+// режимы
+for(let i=0;i<5;i++){
+
+ let q0=+document.getElementById('q0_'+i).value||0;
+ let p0=+document.getElementById('p0_'+i).value||0;
+ let q1=+document.getElementById('q1_'+i).value||0;
+ let p1=+document.getElementById('p1_'+i).value||0;
+
+ let dq=(q1-q0)*p0;
+ let dp=q1*(p1-p0);
+
+ let contrib=(r1[i]-r0[i])/R0*100;
+
+ let s0=r0[i]/R0*100;
+ let s1=r1[i]/R1*100;
+ let ds=s1-s0;
+
+ let color = (mode==="share" ? ds : (mode==="percent" ? contrib : dq+dp)) >=0 ? "green":"red";
+
+ impactHTML += `<div><b>${names[i]}</b>: `;
+
+ if(mode==="money"){
+    impactHTML += `Q: <span class="${dq>=0?"green":"red"}">${format(dq)}</span> | 
+                   P: <span class="${dp>=0?"green":"red"}">${format(dp)}</span>`;
+ }
+
+ if(mode==="percent"){
+    impactHTML += `<span class="${color}">${contrib.toFixed(1)}%</span>`;
+ }
+
+ if(mode==="share"){
+    impactHTML += `${s0.toFixed(1)}% → ${s1.toFixed(1)}% 
+                   (<span class="${color}">${ds.toFixed(1)} п.п.</span>)`;
+ }
+
+ impactHTML += `</div>`;
+}
+
+document.getElementById('impact').innerHTML=impactHTML;
+
+// текст
+let totalChange = R1 - R0;
+let totalPct = R0 ? (totalChange / R0 * 100) : 0;
+
+let text = `Прирост выручки: ${format(totalChange)} ₪ (${totalPct.toFixed(1)}%).\n`;
+
+for(let i=0;i<5;i++){
+ let delta = r1[i] - r0[i];
+ let pct = R0 ? (delta / R0 * 100) : 0;
+ text += `${names[i]}: ${delta>=0?"+":""}${format(delta)} (${pct.toFixed(1)}%)\n`;
+}
+
+document.getElementById('summary').innerText = text;
+
+}
+
+document.addEventListener('input',calc);
+
+// ENTER переход
+const inputs = Array.from(document.querySelectorAll('input'));
+inputs.forEach((input, index) => {
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            let next = inputs[index+1];
+            if(next) next.focus();
+        }
+    });
+});
+
+// автотест
+function rand(min,max){
+    return Math.floor(Math.random()*(max-min+1))+min;
+}
+
+function fillTest(){
+
+let ranges = [
+ [1000,2000],
+ [2000,6000],
+ [6000,10000],
+ [10000,15000],
+ [15000,20000]
+];
+
+let dropIndex = rand(0,4);
+
+for(let i=0;i<5;i++){
+
+ let q0 = rand(1,10);
+ let p0 = rand(ranges[i][0], ranges[i][1]);
+
+ let growthQ = rand(5,30)/100;
+ let growthP = rand(5,30)/100;
+
+ if(i === dropIndex){
+    growthQ = -rand(1,10)/100;
+    growthP = -rand(1,10)/100;
+ }
+
+ let q1 = Math.max(1, Math.round(q0 * (1 + growthQ)));
+ let p1 = Math.round(p0 * (1 + growthP));
+
+ document.getElementById('q0_'+i).value = q0;
+ document.getElementById('p0_'+i).value = p0;
+ document.getElementById('q1_'+i).value = q1;
+ document.getElementById('p1_'+i).value = p1;
+}
+
+calc();
+}
+
+</script>
+
+</body>
+</html>
