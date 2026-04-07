@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Шаблон номер один удачный</title>
+<title>Revenue Factor Analysis by Five Groups</title>
 
 <style>
 body {
@@ -32,7 +32,7 @@ td,th {
 }
 
 input {
-    width:75px;
+    width:90px;
     padding:6px;
     border-radius:6px;
     border:1px solid #ddd;
@@ -44,7 +44,7 @@ input:focus {
     box-shadow:0 0 0 2px rgba(74,108,255,0.2);
 }
 
-/* === фикс панель === */
+/* panel */
 .panel {
     position:fixed;
     bottom:0;
@@ -75,10 +75,6 @@ button {
 .green { color:green; }
 .red { color:red; }
 
-.panel b {
-    font-size:16px;
-}
-
 .summary {
     font-size:13px;
     margin-top:10px;
@@ -89,18 +85,24 @@ button {
 
 <body>
 
-<h2>Факторная модель выручки</h2>
+<h2>Revenue Factor Analysis by Five Groups</h2>
 
 <table>
 <tr>
-<th>Группа</th>
-<th>Q план</th><th>P план</th>
-<th>Q факт</th><th>P факт</th>
-<th>R план</th><th>R факт</th>
+<th>Group</th>
+<th>Quantity plan</th><th>Average check plan</th>
+<th>Quantity actual</th><th>Average check actual</th>
+<th>Revenue plan</th><th>Revenue actual</th>
 </tr>
 
 <script>
-let names=["0–2k","2–6k","6–10k","10–15k","15–20k"];
+let names=[
+"Mini (0–2000)",
+"Small (2000–6000)",
+"Medium (6000–10000)",
+"Large (10000–20000)",
+"Extra large (20000+)"
+];
 
 for(let i=0;i<5;i++){
 document.write(`<tr>
@@ -119,14 +121,14 @@ document.write(`<tr>
 
 <div class="panel">
 
-<div><b>Прирост выручки:</b> <span id="dr"></span> ₪</div>
+<div><b>Revenue change:</b> <span id="dr"></span></div>
 
 <br>
 
-<button onclick="setMode('money')" id="btn_money" class="active">₪</button>
-<button onclick="setMode('percent')" id="btn_percent">%</button>
-<button onclick="setMode('share')" id="btn_share">доли</button>
-<button onclick="fillTest()">тест</button>
+<button onclick="setMode('money')" id="btn_money" class="active">Amount</button>
+<button onclick="setMode('percent')" id="btn_percent">Percent</button>
+<button onclick="setMode('share')" id="btn_share">Share</button>
+<button onclick="fillTest()">Test</button>
 
 <div id="impact" style="margin-top:10px;"></div>
 
@@ -146,7 +148,7 @@ function setMode(m){
 }
 
 function format(num){
- return num.toLocaleString('ru-RU');
+ return num.toLocaleString('en-US');
 }
 
 function calc(){
@@ -175,7 +177,7 @@ for(let i=0;i<5;i++){
 let dr = R1-R0;
 document.getElementById('dr').innerText=format(dr);
 
-// режимы
+// modes
 for(let i=0;i<5;i++){
 
  let q0=+document.getElementById('q0_'+i).value||0;
@@ -183,8 +185,8 @@ for(let i=0;i<5;i++){
  let q1=+document.getElementById('q1_'+i).value||0;
  let p1=+document.getElementById('p1_'+i).value||0;
 
- let dq=(q1-q0)*p0;
- let dp=q1*(p1-p0);
+ let quantityEffect=(q1-q0)*p0;
+ let averageEffect=q1*(p1-p0);
 
  let contrib=(r1[i]-r0[i])/R0*100;
 
@@ -192,13 +194,13 @@ for(let i=0;i<5;i++){
  let s1=r1[i]/R1*100;
  let ds=s1-s0;
 
- let color = (mode==="share" ? ds : (mode==="percent" ? contrib : dq+dp)) >=0 ? "green":"red";
+ let color = (mode==="share" ? ds : (mode==="percent" ? contrib : quantityEffect+averageEffect)) >=0 ? "green":"red";
 
  impactHTML += `<div><b>${names[i]}</b>: `;
 
  if(mode==="money"){
-    impactHTML += `Q: <span class="${dq>=0?"green":"red"}">${format(dq)}</span> | 
-                   P: <span class="${dp>=0?"green":"red"}">${format(dp)}</span>`;
+    impactHTML += `Quantity: <span class="${quantityEffect>=0?"green":"red"}">${format(quantityEffect)}</span> | 
+                   Average check: <span class="${averageEffect>=0?"green":"red"}">${format(averageEffect)}</span>`;
  }
 
  if(mode==="percent"){
@@ -207,7 +209,7 @@ for(let i=0;i<5;i++){
 
  if(mode==="share"){
     impactHTML += `${s0.toFixed(1)}% → ${s1.toFixed(1)}% 
-                   (<span class="${color}">${ds.toFixed(1)} п.п.</span>)`;
+                   (<span class="${color}">${ds.toFixed(1)} p.p.</span>)`;
  }
 
  impactHTML += `</div>`;
@@ -215,11 +217,11 @@ for(let i=0;i<5;i++){
 
 document.getElementById('impact').innerHTML=impactHTML;
 
-// текст
+// summary
 let totalChange = R1 - R0;
 let totalPct = R0 ? (totalChange / R0 * 100) : 0;
 
-let text = `Прирост выручки: ${format(totalChange)} ₪ (${totalPct.toFixed(1)}%).\n`;
+let text = `Revenue change: ${format(totalChange)} (${totalPct.toFixed(1)}%).\n`;
 
 for(let i=0;i<5;i++){
  let delta = r1[i] - r0[i];
@@ -233,7 +235,7 @@ document.getElementById('summary').innerText = text;
 
 document.addEventListener('input',calc);
 
-// ENTER переход
+// enter navigation
 const inputs = Array.from(document.querySelectorAll('input'));
 inputs.forEach((input, index) => {
     input.addEventListener('keydown', function(e) {
@@ -245,7 +247,7 @@ inputs.forEach((input, index) => {
     });
 });
 
-// автотест
+// test data
 function rand(min,max){
     return Math.floor(Math.random()*(max-min+1))+min;
 }
@@ -256,8 +258,8 @@ let ranges = [
  [1000,2000],
  [2000,6000],
  [6000,10000],
- [10000,15000],
- [15000,20000]
+ [10000,20000],
+ [20000,30000]
 ];
 
 let dropIndex = rand(0,4);
