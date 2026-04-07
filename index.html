@@ -316,3 +316,41 @@ calc();
 
 </body>
 </html>
+document.addEventListener('paste', function(e){
+
+  let active = document.activeElement;
+
+  // работаем только если вставка в input
+  if(active.tagName !== 'INPUT') return;
+
+  e.preventDefault();
+
+  let text = (e.clipboardData || window.clipboardData).getData('text');
+
+  let rows = text.trim().split(/\n/).map(r => r.split('\t'));
+
+  // ожидаем 5 строк (группы)
+  for(let i=0;i<5;i++){
+
+    if(!rows[i]) continue;
+
+    let row = rows[i];
+
+    // порядок: Quantity plan, Average check plan, Quantity actual, Average check actual
+    let ids = ['q0_','p0_','q1_','p1_'];
+
+    for(let j=0;j<4;j++){
+
+      let val = row[j];
+      if(val === undefined) continue;
+
+      let input = document.getElementById(ids[j] + i);
+      if(!input) continue;
+
+      input.value = val.replace(',', '.');
+    }
+  }
+
+  calc();
+
+});
