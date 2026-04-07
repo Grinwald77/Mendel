@@ -10,7 +10,7 @@ body {
     background:#f4f6fa;
     margin:0;
     padding:15px;
-    padding-bottom:220px;
+    padding-bottom:260px;
 }
 
 table {
@@ -58,6 +58,13 @@ button {
     font-size:13px;
     margin-top:10px;
     white-space:pre-line;
+}
+
+canvas {
+    margin-top:20px;
+    background:white;
+    border-radius:12px;
+    padding:10px;
 }
 </style>
 </head>
@@ -108,6 +115,8 @@ document.write(`<tr>
 
 </table>
 
+<canvas id="waterfallChart" height="140"></canvas>
+
 <div class="panel">
 
 <div><b>Revenue change:</b> <span id="dr"></span></div>
@@ -124,6 +133,8 @@ document.write(`<tr>
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 
 let mode="money";
@@ -136,7 +147,7 @@ function setMode(m){
 }
 
 function format(num){
- return num.toLocaleString('en-US');
+ return Math.round(num).toLocaleString('en-US');
 }
 
 function calc(){
@@ -203,8 +214,8 @@ for(let i=0;i<5;i++){
  impactHTML += `<div><b>${names[i]}</b>: `;
 
  if(mode==="money"){
-    impactHTML += `Quantity: <span class="${quantityEffect>=0?"green":"red"}">${format(quantityEffect)}</span> | 
-                   Average check: <span class="${averageEffect>=0?"green":"red"}">${format(averageEffect)}</span>`;
+    impactHTML += `Q: <span class="${quantityEffect>=0?"green":"red"}">${format(quantityEffect)}</span> | 
+                   P: <span class="${averageEffect>=0?"green":"red"}">${format(averageEffect)}</span>`;
  }
 
  if(mode==="percent"){
@@ -231,22 +242,98 @@ for(let i=0;i<5;i++){
 
 document.getElementById('summary').innerText = text;
 
+// 🔥 WATERFALL
+drawWaterfall(r0, r1, R0, R1);
+
 }
 
-// 🔥 ВСТАВКА ВСЕЙ ТАБЛИЦЫ (РАБОЧАЯ)
+// 🔥 DOUBLE WATERFALL
+function drawWaterfall(r0, r1, R0, R1){
+
+let labels = ["Plan"];
+let base = [];
+let values = [];
+let colors = [];
+
+let cumulative = 0;
+
+// старт
+base.push(0);
+values.push(R0);
+colors.push("#4a6cff");
+
+cumulative = R0;
+
+// группы
+for(let i=0;i<5;i++){
+
+ let q0=+document.getElementById('q0_'+i).value||0;
+ let p0=+document.getElementById('p0_'+i).value||0;
+ let q1=+document.getElementById('q1_'+i).value||0;
+ let p1=+document.getElementById('p1_'+i).value||0;
+
+ let quantityEffect = (q1 - q0) * p0;
+ let averageEffect  = q1 * (p1 - p0);
+
+ // Quantity
+ labels.push(names[i] + " Q");
+ base.push(cumulative);
+ values.push(quantityEffect);
+ colors.push(quantityEffect >= 0 ? "#2ecc71" : "#e74c3c");
+ cumulative += quantityEffect;
+
+ // Average
+ labels.push(names[i] + " P");
+ base.push(cumulative);
+ values.push(averageEffect);
+ colors.push(averageEffect >= 0 ? "#27ae60" : "#c0392b");
+ cumulative += averageEffect;
+}
+
+// итог
+labels.push("Actual");
+base.push(0);
+values.push(R1);
+colors.push("#4a6cff");
+
+// draw
+if(window.wChart) window.wChart.destroy();
+
+let ctx = document.getElementById('waterfallChart').getContext('2d');
+
+window.wChart = new Chart(ctx,{
+ type:'bar',
+ data:{
+   labels: labels,
+   datasets:[
+     { data: base, backgroundColor:'transparent', stack:'s' },
+     { data: values, backgroundColor: colors, stack:'s' }
+   ]
+ },
+ options:{
+   plugins:{ legend:{display:false} },
+   scales:{
+     x:{ stacked:true, ticks:{ maxRotation:90, minRotation:60 } },
+     y:{ stacked:true }
+   }
+ }
+});
+
+}
+
+// paste from excel
 document.querySelectorAll('input').forEach(input=>{
 input.addEventListener('paste', function(e){
 
  let text = e.clipboardData.getData('text');
- if(!text.includes('\\t')) return;
+ if(!text.includes('\t')) return;
 
  e.preventDefault();
 
- let rows = text.trim().split(/\\n/);
+ let rows = text.trim().split(/\n/);
 
  rows.forEach((row,i)=>{
-   let cols = row.split('\\t');
-
+   let cols = row.split('\t');
    if(i>=5) return;
 
    document.getElementById(`q0_${i}`).value = cols[0] || '';
