@@ -141,8 +141,6 @@ period1.selectedIndex=1;
 
 function build(){
 
-function build(){
-
 groups=+groupCount.value||1;
 
 let html=`<table>
@@ -203,6 +201,21 @@ calc();
 document.getElementById('q0_0')?.focus();
 }
 
+function updateHeaders(){
+
+let p0 = `${period0.value} (${type0.value})`;
+let p1 = `${period1.value} (${type1.value})`;
+
+document.getElementById("h_period0").innerText = p0;
+document.getElementById("h_period1").innerText = p1;
+
+document.getElementById("h_r0").innerText = `Revenue ${p0}`;
+document.getElementById("h_r1").innerText = `Revenue ${p1}`;
+
+document.getElementById("h_s0").innerText = `Share ${p0}`;
+document.getElementById("h_s1").innerText = `Share ${p1}`;
+}
+    
 function setMode(m){
 mode=m;
 document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
@@ -220,6 +233,7 @@ label1.innerText=`${period1.value} (${type1.value})`;
 function calc(){
 
 updateLabels();
+updateHeaders();
 
 let Q0=0,Q1=0,R0=0,R1=0;
 let r0=[],r1=[];
