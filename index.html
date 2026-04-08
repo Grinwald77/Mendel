@@ -38,7 +38,6 @@ th { white-space: pre-line; }
 .top-bar {
     display:flex;
     gap:15px;
-    align-items:center;
     flex-wrap:wrap;
 }
 
@@ -64,7 +63,6 @@ button {
     background:white;
     padding:15px;
     border-radius:12px;
-    box-shadow:0 6px 20px rgba(0,0,0,0.1);
 }
 </style>
 </head>
@@ -108,10 +106,7 @@ Current Period<br>
 </select>
 </div>
 
-<div>
-<br>
-<button onclick="build()">Build</button>
-</div>
+<div><br><button onclick="build()">Build</button></div>
 
 </div>
 
@@ -148,7 +143,7 @@ let groups=5;
 let mode="money";
 
 function generatePeriods(){
-let type=document.getElementById("periodType").value;
+let type=periodType.value;
 let list=[];
 
 if(type==="months"){
@@ -180,12 +175,10 @@ return list;
 
 function fillSelectors(){
 let list=generatePeriods();
-let html="";
-list.forEach(p=>html+=`<option>${p}</option>`);
+let html=list.map(x=>`<option>${x}</option>`).join("");
 period0.innerHTML=html;
 period1.innerHTML=html;
 period1.selectedIndex=1;
-updateHeaders();
 }
 
 function build(){
@@ -232,12 +225,23 @@ html+=`<tr>
 </tr>`;
 }
 
+html+=`<tr class="total">
+<td>Total</td>
+<td id="q0_total"></td>
+<td id="q1_total"></td>
+<td id="p0_total"></td>
+<td id="p1_total"></td>
+<td id="r0_total"></td>
+<td id="r1_total"></td>
+<td></td><td></td><td></td>
+</tr>`;
+
 html+=`</table>`;
 tableContainer.innerHTML=html;
 
+updateHeaders();
 addEnterNav();
 addPasteSupport();
-updateHeaders();
 calc();
 }
 
@@ -264,38 +268,47 @@ calc();
 
 function calc(){
 
-let R0=0,R1=0;
+let Q0=0,Q1=0,R0=0,R1=0;
 let r0=[],r1=[];
-let qEffectTotal=0;
-let pEffectTotal=0;
+let qEffect=0,pEffect=0;
 
 for(let i=0;i<groups;i++){
 
-let q0=+document.getElementById(`q0_${i}`).value||0;
-let q1=+document.getElementById(`q1_${i}`).value||0;
-let p0=+document.getElementById(`p0_${i}`).value||0;
-let p1=+document.getElementById(`p1_${i}`).value||0;
+let q0=+q0_[i]?.value||0;
+let q1=+q1_[i]?.value||0;
+let p0=+p0_[i]?.value||0;
+let p1=+p1_[i]?.value||0;
 
 r0[i]=q0*p0;
 r1[i]=q1*p1;
 
-R0+=r0[i];
-R1+=r1[i];
+Q0+=q0; Q1+=q1;
+R0+=r0[i]; R1+=r1[i];
 
-// эффекты
 let dq=(q1-q0)*p0;
 let dp=q1*(p1-p0);
 
-qEffectTotal+=dq;
-pEffectTotal+=dp;
+qEffect+=dq;
+pEffect+=dp;
 
-document.getElementById(`r0_${i}`).innerText=format(r0[i]);
-document.getElementById(`r1_${i}`).innerText=format(r1[i]);
+r0_[i].innerText=format(r0[i]);
+r1_[i].innerText=format(r1[i]);
 }
+
+let dR=R1-R0;
 
 R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
-dr.innerText=format(R1-R0);
+dr.innerText=format(dR);
+
+// totals
+q0_total.innerText=format(Q0);
+q1_total.innerText=format(Q1);
+r0_total.innerText=format(R0);
+r1_total.innerText=format(R1);
+
+p0_total.innerText=Q0?format(R0/Q0):0;
+p1_total.innerText=Q1?format(R1/Q1):0;
 
 // shares
 for(let i=0;i<groups;i++){
@@ -303,38 +316,32 @@ let s0=R0?r0[i]/R0*100:0;
 let s1=R1?r1[i]/R1*100:0;
 let ds=s1-s0;
 
-document.getElementById(`s0_${i}`).innerText=s0.toFixed(1)+"%";
-document.getElementById(`s1_${i}`).innerText=s1.toFixed(1)+"%";
-document.getElementById(`ds_${i}`).innerHTML=
-`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
+s0_[i].innerText=s0.toFixed(1)+"%";
+s1_[i].innerText=s1.toFixed(1)+"%";
+ds_[i].innerHTML=`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
 // impact
 let out="";
 for(let i=0;i<groups;i++){
-
-let name=document.getElementById(`g_${i}`).value;
+let name=g_[i].value;
 let delta=r1[i]-r0[i];
 
 if(mode==="money") out+=`${name}: ${format(delta)}<br>`;
-if(mode==="percent"){
-let pct=R0?delta/R0*100:0;
-out+=`${name}: ${pct.toFixed(1)}%<br>`;
-}
+if(mode==="percent") out+=`${name}: ${(R0?delta/R0*100:0).toFixed(1)}%<br>`;
 if(mode==="share"){
 let s0=r0[i]/R0*100||0;
 let s1=r1[i]/R1*100||0;
 out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 }
 }
-
 impact.innerHTML=out;
 
-// 🔥 факторный итог
-factors.innerHTML = `
+// ✅ правильные проценты факторов
+factors.innerHTML=`
 <b>Factor Analysis:</b><br>
-Quantity effect: ${format(qEffectTotal)} (${(R0?qEffectTotal/R0*100:0).toFixed(1)}%)<br>
-Price effect: ${format(pEffectTotal)} (${(R0?pEffectTotal/R0*100:0).toFixed(1)}%)
+Quantity effect: ${format(qEffect)} (${(dR?qEffect/dR*100:0).toFixed(1)}%)<br>
+Price effect: ${format(pEffect)} (${(dR?pEffect/dR*100:0).toFixed(1)}%)
 `;
 
 }
@@ -342,18 +349,14 @@ Price effect: ${format(pEffectTotal)} (${(R0?pEffectTotal/R0*100:0).toFixed(1)}%
 function format(n){ return Math.round(n).toLocaleString('en-US'); }
 
 function togglePanel(){
-let p=document.getElementById("panel");
-p.style.display = p.style.display==="block"?"none":"block";
+panel.style.display = panel.style.display==="block"?"none":"block";
 }
 
 function addEnterNav(){
-let inputs=document.querySelectorAll("input");
-inputs.forEach((el,i)=>{
-el.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-e.preventDefault();
-inputs[i+1]?.focus();
-}});
+document.querySelectorAll("input").forEach((el,i,arr)=>{
+el.onkeydown=e=>{
+if(e.key==="Enter"){e.preventDefault();arr[i+1]?.focus();}
+};
 });
 }
 
@@ -374,11 +377,11 @@ if(i>=groups) return;
 let c=row.split("\t");
 if(c.length<5) return;
 
-document.getElementById(`g_${i}`).value=c[0];
-document.getElementById(`q0_${i}`).value=c[1];
-document.getElementById(`q1_${i}`).value=c[2];
-document.getElementById(`p0_${i}`).value=c[3];
-document.getElementById(`p1_${i}`).value=c[4];
+g_[i].value=c[0];
+q0_[i].value=c[1];
+q1_[i].value=c[2];
+p0_[i].value=c[3];
+p1_[i].value=c[4];
 });
 
 calc();
@@ -388,10 +391,10 @@ calc();
 
 function fillTest(){
 for(let i=0;i<groups;i++){
-document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
-document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
+q0_[i].value=Math.floor(Math.random()*10)+1;
+q1_[i].value=Math.floor(Math.random()*10)+1;
+p0_[i].value=Math.floor(Math.random()*20000)+1000;
+p1_[i].value=Math.floor(Math.random()*20000)+1000;
 }
 calc();
 }
