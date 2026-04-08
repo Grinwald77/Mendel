@@ -228,6 +228,11 @@ calc();
 
 function calc(){
 
+updateHeaders();
+
+label0.innerText = `${period0.value} (${type0.value})`;
+label1.innerText = `${period1.value} (${type1.value})`;
+    
 let Q0=0,Q1=0,R0=0,R1=0;
 let r0=[],r1=[];
 let qEffect=0,pEffect=0;
