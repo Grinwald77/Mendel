@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.4 23:38 / Apr.08, 2026</title>
+<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.3 23:11 / Apr.08, 2026</title>
 
 <style>
 body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
@@ -66,9 +66,9 @@ Period Type<br>
 Source Period<br>
 <select id="period0"></select>
 <select id="type0">
-<option>Past</option>
-<option>Actual</option>
-<option>Planned</option>
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
 </select>
 </div>
 
@@ -76,16 +76,16 @@ Source Period<br>
 Current Period<br>
 <select id="period1"></select>
 <select id="type1">
-<option>Past</option>
-<option>Actual</option>
-<option>Planned</option>
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
 </select>
 </div>
 
 <div>
 <br>
-<button id="btnBuild" onclick="build()">Build</button>
-<button id="btnTest" onclick="fillTest()">Test</button>
+<button onclick="build()">Build</button>
+<button onclick="fillTest()">Test</button>
 </div>
 
 </div>
@@ -123,6 +123,7 @@ const FactorModel = {
             price:q1*(p1-p0)
         };
     },
+    delta(r0,r1){ return r1-r0; },
     percent(delta,total){ return total?delta/total*100:0; }
 };
 
@@ -196,10 +197,10 @@ html+=`<tr>
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
 <td id="dr_${i}"></td>
-<td id="impact_${i}"></td>
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
+<td id="impact_${i}"></td>
 </tr>`;
 }
 
@@ -238,6 +239,8 @@ h_s1.innerText = p1;
 
 function calc(){
 
+updateHeaders();
+
 label0.innerText = `${period0.value} (${type0.value})`;
 label1.innerText = `${period1.value} (${type1.value})`;
 
@@ -247,7 +250,7 @@ let qEffect=0,pEffect=0;
 
 for(let i=0;i<groups;i++){
 
-let q0=+q0_[i]?.value||+document.getElementById(`q0_${i}`).value||0;
+let q0=+document.getElementById(`q0_${i}`).value||0;
 let q1=+document.getElementById(`q1_${i}`).value||0;
 let p0=+document.getElementById(`p0_${i}`).value||0;
 let p1=+document.getElementById(`p1_${i}`).value||0;
@@ -293,8 +296,9 @@ document.getElementById(`ds_${i}`).innerHTML =
 document.getElementById(`impact_${i}`).innerText = impact.toFixed(1)+"%";
 }
 
-// FACTOR DETAILS
-let qDetails="", pDetails="";
+// FACTORS + DETAILS
+let qDetails = "";
+let pDetails = "";
 
 for(let i=0;i<groups;i++){
 let name=document.getElementById(`g_${i}`).value;
@@ -306,8 +310,8 @@ let p1=+document.getElementById(`p1_${i}`).value||0;
 
 let e=FactorModel.decompose(q0,q1,p0,p1);
 
-qDetails+=`${name}: ${format(e.quantity)} (${FactorModel.percent(e.quantity,dR).toFixed(1)}%)<br>`;
-pDetails+=`${name}: ${format(e.price)} (${FactorModel.percent(e.price,dR).toFixed(1)}%)<br>`;
+qDetails += `${name}: ${format(e.quantity)} (${FactorModel.percent(e.quantity,dR).toFixed(1)}%)<br>`;
+pDetails += `${name}: ${format(e.price)} (${FactorModel.percent(e.price,dR).toFixed(1)}%)<br>`;
 }
 
 factors.innerHTML=`
@@ -323,56 +327,18 @@ Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
 `;
 }
 
-// NAVIGATION
+// HELPERS
+
 function addEnterNav(){
-
-let topInputs = document.querySelectorAll(".top-bar input, .top-bar select");
-
-topInputs.forEach((el,i)=>{
-el.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-e.preventDefault();
-
-if(i < topInputs.length-1){
-topInputs[i+1].focus();
-}else{
-btnBuild.focus();
-}
-}
-});
-});
-
-// build → test
-btnBuild.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-e.preventDefault();
-build();
-btnTest.focus();
-}
-});
-
-// test → table
-btnTest.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-e.preventDefault();
-fillTest();
-document.querySelector("#tableContainer input")?.focus();
-}
-});
-
-// table nav
-document.querySelectorAll("#tableContainer input").forEach((el,i,arr)=>{
-el.addEventListener("keydown",e=>{
+document.querySelectorAll("input").forEach((el,i,arr)=>{
+el.onkeydown=e=>{
 if(e.key==="Enter"){
 e.preventDefault();
 arr[i+1]?.focus();
 }
+};
 });
-});
-
 }
-
-// HELPERS
 
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
