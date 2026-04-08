@@ -16,9 +16,8 @@ input, select {
 
 .group-name { width:160px; }
 
-table { width:100%; background:white; border-radius:12px; margin-bottom:20px; }
+table { width:100%; background:white; border-radius:12px; }
 td,th { padding:8px; text-align:center; }
-th { white-space:pre-line; }
 
 .total { background:#eef2ff; font-weight:bold; }
 
@@ -48,10 +47,12 @@ button {
 .green { color:green; }
 .red { color:red; }
 
-.section-title{
-    font-size:18px;
-    margin:20px 0 10px;
-    font-weight:bold;
+.panel {
+    display:none;
+    margin-top:15px;
+    background:white;
+    padding:15px;
+    border-radius:12px;
 }
 </style>
 </head>
@@ -65,16 +66,25 @@ button {
 
 <div>
 <br>
-<button onclick="build()" class="build-btn">Build Revenue</button>
+<button onclick="build()" class="build-btn">Build The Model NOW</button>
 <button onclick="fillTest()" class="test-btn">Test</button>
 </div>
 </div>
 
 <div id="tableContainer"></div>
 
-<!-- ===================== COST BLOCK ===================== -->
+<br>
 
-<div class="section-title">Direct Costs</div>
+<button onclick="togglePanel()" class="build-btn">Revenue Analysis</button>
+
+<div class="panel" id="panel">
+<div><b>Total Revenue:</b> <span id="R1_span"></span></div>
+<div><b>Revenue Change:</b> <span id="dr"></span></div>
+</div>
+
+<!-- ================= COST BLOCK ================= -->
+
+<h2 style="margin-top:30px;">Direct Costs</h2>
 
 <div class="top-bar">
 <div>
@@ -86,9 +96,9 @@ button {
 
 <div id="costTableContainer"></div>
 
-<!-- ===================== MARGIN ===================== -->
+<!-- ================= MARGIN ================= -->
 
-<div class="section-title">Marginal Profit</div>
+<h2 style="margin-top:30px;">Marginal Profit</h2>
 
 <table>
 <tr>
@@ -105,9 +115,9 @@ button {
 
 <script>
 
-// ===================== REVENUE =====================
 let groups=5;
 
+// ================= REVENUE =================
 function build(){
 
 groups=+groupCount.value||1;
@@ -145,15 +155,14 @@ tableContainer.innerHTML=html;
 calc();
 }
 
-// ===================== COST =====================
-
+// ================= COST =================
 function buildCost(){
 
 let html=`<table>
 <tr>
 <th>Group</th>
-<th>C0</th>
-<th>C1</th>
+<th>Cost 0</th>
+<th>Cost 1</th>
 <th>Δ</th>
 </tr>`;
 
@@ -179,8 +188,7 @@ costTableContainer.innerHTML=html;
 calc();
 }
 
-// ===================== CALC =====================
-
+// ================= CALC =================
 function calc(){
 
 let R0=0,R1=0;
@@ -205,7 +213,7 @@ r1_${i}.innerText=format(r1);
 }
 }
 
-// cost
+// costs
 for(let i=0;i<groups;i++){
 let c0=+document.getElementById(`c0_${i}`)?.value||0;
 let c1=+document.getElementById(`c1_${i}`)?.value||0;
@@ -235,32 +243,35 @@ cd_total.innerText=format(C1-C0);
 rev_total.innerText=format(R1);
 cost_total.innerText=format(C1);
 margin_total.innerText=format(R1-C1);
+
+R1_span.innerText=format(R1);
+dr.innerText=format(R1-R0);
 }
 
-// ===================== TEST =====================
-
+// ================= TEST =================
 function fillTest(){
 for(let i=0;i<groups;i++){
-q0_${i}.value=rand(1,10);
-q1_${i}.value=rand(1,10);
-p0_${i}.value=rand(1000,20000);
-p1_${i}.value=rand(1000,20000);
+q0_${i}.value=Math.floor(Math.random()*10)+1;
+q1_${i}.value=Math.floor(Math.random()*10)+1;
+p0_${i}.value=Math.floor(Math.random()*20000)+1000;
+p1_${i}.value=Math.floor(Math.random()*20000)+1000;
 }
 calc();
 }
 
 function fillTestCost(){
 for(let i=0;i<groups;i++){
-c0_${i}.value=rand(1000,20000);
-c1_${i}.value=rand(1000,20000);
+c0_${i}.value=Math.floor(Math.random()*20000)+1000;
+c1_${i}.value=Math.floor(Math.random()*20000)+1000;
 }
 calc();
 }
 
-// ===================== HELP =====================
-
-function rand(a,b){ return Math.floor(Math.random()*(b-a)+a); }
 function format(n){ return Math.round(n).toLocaleString('en-US'); }
+
+function togglePanel(){
+panel.style.display = panel.style.display==="block"?"none":"block";
+}
 
 document.addEventListener("input",calc);
 
