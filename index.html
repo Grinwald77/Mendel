@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Model</title>
+<title>Revenue Factor Analysis by Five Groups</title>
 
 <style>
 body {
@@ -47,16 +47,6 @@ td,th {
     border-top:1px solid #ddd;
 }
 
-button {
-    padding:6px 10px;
-    margin:5px;
-}
-
-.active {
-    background:#4a6cff;
-    color:white;
-}
-
 .green { color:green; }
 .red { color:red; }
 </style>
@@ -64,7 +54,7 @@ button {
 
 <body>
 
-<h2>Revenue Factor Model</h2>
+<h2>Revenue Factor Analysis</h2>
 
 <div>
 Number of Groups:
@@ -75,7 +65,6 @@ Number of Groups:
 <br>
 
 <div style="display:flex; gap:20px;">
-
 <div>
 <b>Period 1</b><br>
 <select id="period0"></select>
@@ -93,7 +82,6 @@ Number of Groups:
 <option>Planned</option>
 </select>
 </div>
-
 </div>
 
 <br>
@@ -101,24 +89,15 @@ Number of Groups:
 <div id="tableContainer"></div>
 
 <div class="panel">
-
-<div><b id="label0">Period 1:</b> <span id="R0"></span></div>
-<div><b id="label1">Period 2:</b> <span id="R1"></span></div>
+<div><b id="label0"></b> <span id="R0_span"></span></div>
+<div><b id="label1"></b> <span id="R1_span"></span></div>
 <div><b>Revenue Change:</b> <span id="dr"></span></div>
-
-<button onclick="setMode('money')" id="btn_money" class="active">Revenue</button>
-<button onclick="setMode('percent')" id="btn_percent">Percent</button>
-<button onclick="setMode('share')" id="btn_share">Share</button>
-<button onclick="fillTest()">Test</button>
-
 <div id="impact"></div>
-
 </div>
 
 <script>
 
 let groups=5;
-let mode="money";
 
 function generatePeriods(){
 const months=["January","February","March","April","May","June",
@@ -148,8 +127,8 @@ groups=+groupCount.value||1;
 let html=`<table>
 <tr>
 <th>Group</th>
-<th>Quantity (1)</th><th>Average Price (1)</th>
-<th>Quantity (2)</th><th>Average Price (2)</th>
+<th>Quantity (1)</th><th>Average check (1)</th>
+<th>Quantity (2)</th><th>Average check (2)</th>
 <th>Revenue (1)</th><th>Revenue (2)</th>
 <th>Share (1)</th><th>Share (2)</th><th>Δ Share</th>
 </tr>`;
@@ -183,11 +162,12 @@ html+=`<tr class="total">
 html+=`</table>`;
 tableContainer.innerHTML=html;
 
-addEnterNav();
 calc();
 }
 
-function format(n){return n.toLocaleString('en-US');}
+function format(n){
+return Math.round(n).toLocaleString('en-US');
+}
 
 function updateLabels(){
 label0.innerText=`${period0.value} (${type0.value})`;
@@ -203,10 +183,10 @@ let r0=[],r1=[];
 
 for(let i=0;i<groups;i++){
 
-let q0=+q0_[i]?.value||0;
-let p0=+p0_[i]?.value||0;
-let q1=+q1_[i]?.value||0;
-let p1=+p1_[i]?.value||0;
+let q0=+document.getElementById(`q0_${i}`)?.value||0;
+let p0=+document.getElementById(`p0_${i}`)?.value||0;
+let q1=+document.getElementById(`q1_${i}`)?.value||0;
+let p1=+document.getElementById(`p1_${i}`)?.value||0;
 
 r0[i]=q0*p0;
 r1[i]=q1*p1;
@@ -218,21 +198,23 @@ document.getElementById(`r0_${i}`).innerText=format(r0[i]);
 document.getElementById(`r1_${i}`).innerText=format(r1[i]);
 }
 
+// totals
 R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
 dr.innerText=format(R1-R0);
 
-// totals
 q0_total.innerText=format(Q0);
 q1_total.innerText=format(Q1);
 r0_total.innerText=format(R0);
 r1_total.innerText=format(R1);
 
-p0_total.innerText=format(Q0?Math.round(R0/Q0):0);
-p1_total.innerText=format(Q1?Math.round(R1/Q1):0);
+// weighted average
+p0_total.innerText=Q0?format(R0/Q0):0;
+p1_total.innerText=Q1?format(R1/Q1):0;
 
 // shares
 for(let i=0;i<groups;i++){
+
 let s0=R0?r0[i]/R0*100:0;
 let s1=R1?r1[i]/R1*100:0;
 let ds=s1-s0;
@@ -246,47 +228,12 @@ document.getElementById(`ds_${i}`).innerHTML=
 // impact
 let out="";
 for(let i=0;i<groups;i++){
-
 let delta=r1[i]-r0[i];
-let pct=R0?delta/R0*100:0;
-
-if(mode==="money") out+=`Group ${i+1}: ${format(delta)}<br>`;
-if(mode==="percent") out+=`Group ${i+1}: ${pct.toFixed(1)}%<br>`;
-if(mode==="share"){
-let s0=r0[i]/R0*100||0;
-let s1=r1[i]/R1*100||0;
-out+=`Group ${i+1}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
-}
+out+=`Group ${i+1}: ${format(delta)}<br>`;
 }
 
 impact.innerHTML=out;
 
-}
-
-function setMode(m){
-mode=m;
-calc();
-}
-
-function addEnterNav(){
-let inputs=document.querySelectorAll("input");
-inputs.forEach((el,i)=>{
-el.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-e.preventDefault();
-inputs[i+1]?.focus();
-}});
-});
-}
-
-function fillTest(){
-for(let i=0;i<groups;i++){
-document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
-document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
-}
-calc();
 }
 
 document.addEventListener("input",calc);
