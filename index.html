@@ -141,16 +141,30 @@ period1.selectedIndex=1;
 
 function build(){
 
+function build(){
+
 groups=+groupCount.value||1;
 
 let html=`<table>
+
 <tr>
-<th>Group</th>
-<th>Quantity (1)</th><th>Average Price (1)</th>
-<th>Quantity (2)</th><th>Average Price (2)</th>
-<th>Revenue (1)</th><th>Revenue (2)</th>
-<th>Share (1)</th><th>Share (2)</th><th>Δ Share</th>
-</tr>`;
+<th rowspan="2">Product Group</th>
+<th colspan="2">Planned Period</th>
+<th colspan="2">Actual Period</th>
+<th rowspan="2">Revenue (Planned)</th>
+<th rowspan="2">Revenue (Actual)</th>
+<th rowspan="2">Share (Planned)</th>
+<th rowspan="2">Share (Actual)</th>
+<th rowspan="2">Δ Share</th>
+</tr>
+
+<tr>
+<th>Quantity</th>
+<th>Average Price</th>
+<th>Quantity</th>
+<th>Average Price</th>
+</tr>
+`;
 
 for(let i=0;i<groups;i++){
 html+=`<tr>
