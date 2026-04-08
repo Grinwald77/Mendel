@@ -310,11 +310,30 @@ document.getElementById(`ds_${i}`).innerHTML =
 document.getElementById(`impact_${i}`).innerText = impact.toFixed(1)+"%";
 }
 
-// FACTORS
+// FACTORS + ВКЛАД ПО ГРУППАМ
+let qDetails = "";
+let pDetails = "";
+for(let i=0;i<groups;i++){
+let name = document.getElementById(`g_${i}`).value;
+let q0=+document.getElementById(`q0_${i}`).value||0;
+let q1=+document.getElementById(`q1_${i}`).value||0;
+let p0=+document.getElementById(`p0_${i}`).value||0;
+let p1=+document.getElementById(`p1_${i}`).value||0;
+let e = FactorModel.decompose(q0,q1,p0,p1);
+qDetails += `${name}: ${format(e.quantity)} (${FactorModel.percent(e.quantity,dR).toFixed(1)}%)<br>`;
+pDetails += `${name}: ${format(e.price)} (${FactorModel.percent(e.price,dR).toFixed(1)}%)<br>`;
+}
 factors.innerHTML=`
 <b>Revenue Factor Analysis:</b><br>
 Quantity: ${format(qEffect)} (${FactorModel.percent(qEffect,dR).toFixed(1)}%)<br>
 Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
+<br><br>
+<b>By Groups:</b><br>
+<u>Quantity contribution:</u><br>
+${qDetails}
+<br>
+<u>Price contribution:</u><br>
+${pDetails}
 `;
 }
 
