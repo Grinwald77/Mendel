@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.1 22:48 / Apr.08, 2026</title>
+<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.2 22:58 / Apr.08, 2026</title>
 
 <style>
 body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
@@ -334,11 +334,33 @@ out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 }
 impact.innerHTML=out;
 
-// FACTORS
+// 🔥 ДЕТАЛИЗАЦИЯ ПО ГРУППАМ
+let qDetails = "";
+let pDetails = "";
+
+for(let i=0;i<groups;i++){
+    let name = document.getElementById(`g_${i}`).value;
+    let q0=+document.getElementById(`q0_${i}`).value||0;
+    let q1=+document.getElementById(`q1_${i}`).value||0;
+    let p0=+document.getElementById(`p0_${i}`).value||0;
+    let p1=+document.getElementById(`p1_${i}`).value||0;
+    let e = FactorModel.decompose(q0,q1,p0,p1);
+    qDetails += `${name}: ${format(e.quantity)} (${FactorModel.percent(e.quantity,dR).toFixed(1)}%)<br>`;
+    pDetails += `${name}: ${format(e.price)} (${FactorModel.percent(e.price,dR).toFixed(1)}%)<br>`;
+}
+
+// 🔥 ВЫВОД
 factors.innerHTML=`
 <b>Revenue Factor Analysis:</b><br>
 Quantity: ${format(qEffect)} (${FactorModel.percent(qEffect,dR).toFixed(1)}%)<br>
 Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
+<br><br>
+<b>By Groups:</b><br>
+<u>Quantity effect:</u><br>
+${qDetails}
+<br>
+<u>Price effect:</u><br>
+${pDetails}
 `;
 }
 
