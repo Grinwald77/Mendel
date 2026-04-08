@@ -10,7 +10,7 @@ body {
     background:#f4f6fa;
     margin:0;
     padding:15px;
-    padding-bottom:260px;
+    padding-bottom:120px;
 }
 
 input, select {
@@ -44,14 +44,28 @@ th {
     font-weight:bold;
 }
 
+/* 🔥 DRAG PANEL */
 .panel {
     position:fixed;
-    bottom:0;
-    left:0;
-    right:0;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:20px;
+    width:90%;
+    max-width:900px;
     background:white;
     padding:15px;
-    border-top:1px solid #ddd;
+    border-radius:12px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.15);
+}
+
+.panel-header {
+    font-weight:bold;
+    margin-bottom:10px;
+    cursor:grab;
+}
+
+.panel.dragging .panel-header {
+    cursor:grabbing;
 }
 
 button {
@@ -105,7 +119,9 @@ Number of Groups:
 
 <div id="tableContainer"></div>
 
-<div class="panel">
+<div class="panel" id="panel">
+
+<div class="panel-header" id="panelHeader">⬍ Drag panel</div>
 
 <div><b id="label0"></b>: <span id="R0_span"></span></div>
 <div><b id="label1"></b>: <span id="R1_span"></span></div>
@@ -128,7 +144,6 @@ let mode="money";
 function generatePeriods(){
 const months=["Jan.","Feb.","Mar.","Apr.","May","Jun.",
 "Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
-
 let list=[];
 for(let y=2025;y<=2026;y++){
 for(let m=0;m<12;m++){
@@ -218,7 +233,6 @@ calc();
 }
 
 function updateHeaders(){
-
 let p0 = `${period0.value} (${type0.value})`;
 let p1 = `${period1.value} (${type1.value})`;
 
@@ -318,19 +332,7 @@ out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 impact.innerHTML=out;
 }
 
-// paste + test + nav остаются без изменений (как у тебя сейчас)
-
-function addEnterNav(){
-let inputs=document.querySelectorAll("input");
-inputs.forEach((el,i)=>{
-el.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-e.preventDefault();
-inputs[i+1]?.focus();
-}});
-});
-}
-
+// paste
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
@@ -360,6 +362,7 @@ calc();
 });
 }
 
+// test
 function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
 function fillTest(){
@@ -371,6 +374,48 @@ document.getElementById(`p1_${i}`).value=rand(1000,20000);
 }
 calc();
 }
+
+// enter nav
+function addEnterNav(){
+let inputs=document.querySelectorAll("input");
+inputs.forEach((el,i)=>{
+el.addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+e.preventDefault();
+inputs[i+1]?.focus();
+}});
+});
+}
+
+// 🔥 DRAG PANEL
+let panel=document.getElementById("panel");
+let header=document.getElementById("panelHeader");
+
+let isDragging=false;
+let offsetY=0;
+
+header.addEventListener("mousedown",e=>{
+isDragging=true;
+offsetY=e.clientY - panel.getBoundingClientRect().top;
+panel.classList.add("dragging");
+});
+
+document.addEventListener("mousemove",e=>{
+if(!isDragging) return;
+
+let y=e.clientY - offsetY;
+
+let maxY=window.innerHeight - panel.offsetHeight;
+y=Math.max(0,Math.min(maxY,y));
+
+panel.style.top=y+"px";
+panel.style.bottom="auto";
+});
+
+document.addEventListener("mouseup",()=>{
+isDragging=false;
+panel.classList.remove("dragging");
+});
 
 groupCount.addEventListener("keydown",e=>{
 if(e.key==="Enter"){ e.preventDefault(); build(); }
