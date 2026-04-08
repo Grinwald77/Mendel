@@ -303,41 +303,38 @@ Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
 // 🔥 НОВАЯ НАВИГАЦИЯ (ГЛАВНОЕ ИЗМЕНЕНИЕ)
 function addEnterNav(){
 
-// 👉 только верхняя панель
-const topInputs = document.querySelectorAll(".top-bar input, .top-bar select, .top-bar button");
+const elements = document.querySelectorAll("input, select");
 
-topInputs.forEach((el,i)=>{
+elements.forEach((el,i)=>{
 
-el.onkeydown = (e)=>{
+el.addEventListener("keydown", e=>{
 
-// INPUT → Enter дальше
 if(el.tagName==="INPUT" && e.key==="Enter"){
 e.preventDefault();
-topInputs[i+1]?.focus();
+elements[i+1]?.focus();
 }
 
-// SELECT → Enter дальше (без глюков)
 if(el.tagName==="SELECT" && e.key==="Enter"){
-e.preventDefault();
-topInputs[i+1]?.focus();
+
+if(el.dataset.open==="true"){
+el.dataset.open="false";
+return;
 }
 
-// Кнопка Build → сразу строит и уводит фокус вниз
-if(el.tagName==="BUTTON" && e.key==="Enter"){
 e.preventDefault();
-el.click();
-
-// после Build → фокус в первую ячейку
-setTimeout(()=>{
-document.querySelector("#q0_0")?.focus();
-},100);
+elements[i+1]?.focus();
 }
 
-};
+if(el.tagName==="SELECT" && (e.key==="ArrowDown" || e.key==="ArrowUp")){
+el.dataset.open="true";
+}
+
+});
 
 });
 
 }
+
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
