@@ -20,6 +20,10 @@ input, select {
     border:1px solid #ddd;
 }
 
+.group-name {
+    width:140px;
+}
+
 table {
     width:100%;
     background:white;
@@ -150,7 +154,7 @@ let html=`<table>
 
 for(let i=0;i<groups;i++){
 html+=`<tr>
-<td>Group ${i+1}</td>
+<td><input class="group-name" id="g_${i}" value="Group ${i+1}"></td>
 <td><input id="q0_${i}"></td>
 <td><input id="p0_${i}"></td>
 <td><input id="q1_${i}"></td>
@@ -178,9 +182,9 @@ html+=`</table>`;
 tableContainer.innerHTML=html;
 
 addEnterNav();
+addPasteSupport();
 calc();
 
-// фокус в первую ячейку
 document.getElementById('q0_0')?.focus();
 }
 
@@ -245,18 +249,20 @@ document.getElementById(`ds_${i}`).innerHTML=
 `<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
-// impact
 let out="";
 for(let i=0;i<groups;i++){
+let name=document.getElementById(`g_${i}`).value;
 let delta=r1[i]-r0[i];
-let pct=R0?delta/R0*100:0;
 
-if(mode==="money") out+=`Group ${i+1}: ${format(delta)}<br>`;
-if(mode==="percent") out+=`Group ${i+1}: ${pct.toFixed(1)}%<br>`;
+if(mode==="money") out+=`${name}: ${format(delta)}<br>`;
+if(mode==="percent"){
+let pct=R0?delta/R0*100:0;
+out+=`${name}: ${pct.toFixed(1)}%<br>`;
+}
 if(mode==="share"){
 let s0=r0[i]/R0*100||0;
 let s1=r1[i]/R1*100||0;
-out+=`Group ${i+1}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
+out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 }
 }
 
@@ -275,12 +281,51 @@ inputs[i+1]?.focus();
 });
 }
 
-// ENTER на количестве групп
-groupCount.addEventListener("keydown",function(e){
-if(e.key==="Enter"){
+// 🔥 ВСТАВКА ВСЕЙ ТАБЛИЦЫ
+function addPasteSupport(){
+document.querySelectorAll("input").forEach(input=>{
+input.addEventListener("paste",function(e){
+
+let text=e.clipboardData.getData("text");
+if(!text.includes("\t")) return;
+
 e.preventDefault();
-build();
+
+let rows=text.trim().split(/\n/);
+
+rows.forEach((row,i)=>{
+if(i>=groups) return;
+
+let cols=row.split("\t");
+
+document.getElementById(`q0_${i}`).value=cols[0]||"";
+document.getElementById(`p0_${i}`).value=cols[1]||"";
+document.getElementById(`q1_${i}`).value=cols[2]||"";
+document.getElementById(`p1_${i}`).value=cols[3]||"";
+});
+
+calc();
+
+});
+});
 }
+
+// test
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+function fillTest(){
+for(let i=0;i<groups;i++){
+document.getElementById(`q0_${i}`).value=rand(1,10);
+document.getElementById(`p0_${i}`).value=rand(1000,20000);
+document.getElementById(`q1_${i}`).value=rand(1,10);
+document.getElementById(`p1_${i}`).value=rand(1000,20000);
+}
+calc();
+}
+
+// ENTER на groups
+groupCount.addEventListener("keydown",function(e){
+if(e.key==="Enter"){ e.preventDefault(); build(); }
 });
 
 document.addEventListener("input",calc);
@@ -288,32 +333,7 @@ document.addEventListener("change",calc);
 
 fillSelectors();
 build();
-function rand(min,max){
-    return Math.floor(Math.random()*(max-min+1))+min;
-}
 
-function fillTest(){
-
-for(let i=0;i<groups;i++){
-
-    let q0 = rand(1,10);
-    let p0 = rand(1000,20000);
-
-    let growthQ = rand(-10,30)/100;
-    let growthP = rand(-10,30)/100;
-
-    let q1 = Math.max(1, Math.round(q0 * (1 + growthQ)));
-    let p1 = Math.max(500, Math.round(p0 * (1 + growthP)));
-
-    document.getElementById(`q0_${i}`).value = q0;
-    document.getElementById(`p0_${i}`).value = p0;
-    document.getElementById(`q1_${i}`).value = q1;
-    document.getElementById(`p1_${i}`).value = p1;
-}
-
-calc();
-}
-    
 </script>
 
 </body>
