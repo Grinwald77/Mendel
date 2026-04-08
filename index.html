@@ -13,17 +13,11 @@ body {
     padding-bottom:220px;
 }
 
-h2 { margin-top:0; }
-
-input {
-    width:80px;
+input, select {
+    width:120px;
     padding:6px;
     border-radius:6px;
     border:1px solid #ddd;
-}
-
-.meta {
-    width:140px;
 }
 
 table {
@@ -31,12 +25,16 @@ table {
     background:white;
     border-radius:12px;
     overflow:hidden;
-    font-size:14px;
 }
 
 td,th {
     padding:8px;
     text-align:center;
+}
+
+.total {
+    background:#eef2ff;
+    font-weight:bold;
 }
 
 .panel {
@@ -47,18 +45,6 @@ td,th {
     background:white;
     padding:15px;
     border-top:1px solid #ddd;
-    max-height:45%;
-    overflow:auto;
-}
-
-button {
-    padding:6px 10px;
-    margin:5px;
-}
-
-.active {
-    background:#4a6cff;
-    color:white;
 }
 
 .green { color:green; }
@@ -70,49 +56,86 @@ button {
 
 <h2>Revenue Factor Model</h2>
 
-<div style="margin-bottom:10px;">
+<div>
 Number of Groups:
 <input id="groupCount" value="5">
 <button onclick="build()">Build Model</button>
 </div>
 
-<!-- PERIODS -->
-<div style="display:flex; gap:20px; margin-bottom:10px;">
+<br>
+
+<!-- PERIOD SELECTORS -->
+<div style="display:flex; gap:20px;">
 
 <div>
 <b>Period 1</b><br>
-<input class="meta" id="m0" placeholder="Month">
-<input class="meta" id="t0" placeholder="Type (Actual/Plan)">
+<select id="period0"></select>
+<select id="type0">
+<option>Actual</option>
+<option>Planned</option>
+</select>
 </div>
 
 <div>
 <b>Period 2</b><br>
-<input class="meta" id="m1" placeholder="Month">
-<input class="meta" id="t1" placeholder="Type (Actual/Plan)">
+<select id="period1"></select>
+<select id="type1">
+<option>Actual</option>
+<option>Planned</option>
+</select>
 </div>
 
 </div>
+
+<br>
 
 <div id="tableContainer"></div>
 
 <div class="panel">
-
 <div><b id="label0">Period 1:</b> <span id="R0"></span></div>
 <div><b id="label1">Period 2:</b> <span id="R1"></span></div>
 <div><b>Revenue Change:</b> <span id="dr"></span></div>
-
-<button onclick="setMode('money')" class="active">Revenue</button>
-<button onclick="setMode('percent')">Percent</button>
-<button onclick="setMode('share')">Share</button>
-
-<div id="impact"></div>
-
 </div>
 
 <script>
 
-let mode="money";
 let groups=5;
+
+function generatePeriods(){
+
+const months = [
+"January","February","March","April","May","June",
+"July","August","September","October","November","December"
+];
+
+let list=[];
+
+for(let y=2025;y<=2026;y++){
+for(let m=0;m<12;m++){
+list.push(months[m]+" "+y);
+}
+}
+
+return list;
+}
+
+function fillPeriodSelectors(){
+
+let periods = generatePeriods();
+
+let html="";
+
+periods.forEach(p=>{
+html+=`<option>${p}</option>`;
+});
+
+document.getElementById('period0').innerHTML=html;
+document.getElementById('period1').innerHTML=html;
+
+// дефолт
+document.getElementById('period0').selectedIndex=0;
+document.getElementById('period1').selectedIndex=1;
+}
 
 function build(){
 
@@ -124,7 +147,6 @@ let html = `<table>
 <th>Quantity (1)</th><th>Average Price (1)</th>
 <th>Quantity (2)</th><th>Average Price (2)</th>
 <th>Revenue (1)</th><th>Revenue (2)</th>
-<th>Share (1)</th><th>Share (2)</th><th>Share Change</th>
 </tr>`;
 
 for(let i=0;i<groups;i++){
@@ -136,22 +158,23 @@ html += `<tr>
 <td><input id="p1_${i}"></td>
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
-<td id="s0_${i}"></td>
-<td id="s1_${i}"></td>
-<td id="ds_${i}"></td>
 </tr>`;
 }
+
+html += `<tr class="total">
+<td>Total</td>
+<td id="q0_total"></td>
+<td id="p0_total"></td>
+<td id="q1_total"></td>
+<td id="p1_total"></td>
+<td id="r0_total"></td>
+<td id="r1_total"></td>
+</tr>`;
 
 html += `</table>`;
 
 document.getElementById('tableContainer').innerHTML = html;
 
-addEnterNav();
-calc();
-}
-
-function setMode(m){
-mode=m;
 calc();
 }
 
@@ -160,104 +183,69 @@ return n.toLocaleString('en-US');
 }
 
 function updateLabels(){
-let l0 = document.getElementById('m0').value + " " + document.getElementById('t0').value;
-let l1 = document.getElementById('m1').value + " " + document.getElementById('t1').value;
 
-document.getElementById('label0').innerText = l0 || "Period 1";
-document.getElementById('label1').innerText = l1 || "Period 2";
+let p0 = document.getElementById('period0').value;
+let t0 = document.getElementById('type0').value;
+
+let p1 = document.getElementById('period1').value;
+let t1 = document.getElementById('type1').value;
+
+document.getElementById('label0').innerText = `${p0} (${t0})`;
+document.getElementById('label1').innerText = `${p1} (${t1})`;
 }
 
 function calc(){
 
 updateLabels();
 
-let Revenue1=0, Revenue2=0;
-let r1=[], r2=[];
-
-// revenue calculation
-for(let i=0;i<groups;i++){
-
-let q1=+document.getElementById('q0_'+i)?.value||0;
-let p1=+document.getElementById('p0_'+i)?.value||0;
-let q2=+document.getElementById('q1_'+i)?.value||0;
-let p2=+document.getElementById('p1_'+i)?.value||0;
-
-r1[i]=q1*p1;
-r2[i]=q2*p2;
-
-Revenue1+=r1[i];
-Revenue2+=r2[i];
-
-document.getElementById('r0_'+i).innerText=format(r1[i]);
-document.getElementById('r1_'+i).innerText=format(r2[i]);
-}
-
-document.getElementById('R0').innerText=format(Revenue1);
-document.getElementById('R1').innerText=format(Revenue2);
-document.getElementById('dr').innerText=format(Revenue2-Revenue1);
-
-// shares
-for(let i=0;i<groups;i++){
-
-let s1 = Revenue1 ? r1[i]/Revenue1*100 : 0;
-let s2 = Revenue2 ? r2[i]/Revenue2*100 : 0;
-let ds = s2 - s1;
-
-document.getElementById('s0_'+i).innerText = s1.toFixed(1)+"%";
-document.getElementById('s1_'+i).innerText = s2.toFixed(1)+"%";
-document.getElementById('ds_'+i).innerHTML =
-`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
-}
-
-// impact
-let out="";
+let totalQ0=0,totalQ1=0;
+let totalR0=0,totalR1=0;
 
 for(let i=0;i<groups;i++){
 
-let delta=r2[i]-r1[i];
-let pct=Revenue1?delta/Revenue1*100:0;
+let q0=+document.getElementById('q0_'+i)?.value||0;
+let p0=+document.getElementById('p0_'+i)?.value||0;
+let q1=+document.getElementById('q1_'+i)?.value||0;
+let p1=+document.getElementById('p1_'+i)?.value||0;
 
-let color = delta>=0?"green":"red";
+let r0=q0*p0;
+let r1=q1*p1;
 
-if(mode==="money"){
-out+=`Group ${i+1}: <span class="${color}">${format(delta)}</span><br>`;
+totalQ0+=q0;
+totalQ1+=q1;
+totalR0+=r0;
+totalR1+=r1;
+
+document.getElementById('r0_'+i).innerText=format(r0);
+document.getElementById('r1_'+i).innerText=format(r1);
 }
 
-if(mode==="percent"){
-out+=`Group ${i+1}: <span class="${color}">${pct.toFixed(1)}%</span><br>`;
-}
+// totals
+document.getElementById('q0_total').innerText=format(totalQ0);
+document.getElementById('q1_total').innerText=format(totalQ1);
+document.getElementById('r0_total').innerText=format(totalR0);
+document.getElementById('r1_total').innerText=format(totalR1);
 
-if(mode==="share"){
-let s1=r1[i]/Revenue1*100||0;
-let s2=r2[i]/Revenue2*100||0;
-let ds=s2-s1;
+let avg0 = totalQ0 ? totalR0/totalQ0 : 0;
+let avg1 = totalQ1 ? totalR1/totalQ1 : 0;
 
-out+=`Group ${i+1}: ${s1.toFixed(1)}% → ${s2.toFixed(1)}% 
-(<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>)<br>`;
-}
-}
+document.getElementById('p0_total').innerText=format(Math.round(avg0));
+document.getElementById('p1_total').innerText=format(Math.round(avg1));
 
-document.getElementById('impact').innerHTML=out;
+document.getElementById('R0').innerText=format(totalR0);
+document.getElementById('R1').innerText=format(totalR1);
+document.getElementById('dr').innerText=format(totalR1-totalR0);
 
 }
 
 document.addEventListener('input',calc);
+document.addEventListener('change',calc);
 
-function addEnterNav(){
-const inputs = Array.from(document.querySelectorAll('input'));
-inputs.forEach((input,i)=>{
-input.addEventListener('keydown',e=>{
-if(e.key==='Enter'){
-e.preventDefault();
-if(inputs[i+1]) inputs[i+1].focus();
-}
-});
-});
-}
-
+// init
+fillPeriodSelectors();
 build();
 
 </script>
 
 </body>
-</html>>
+</html>
