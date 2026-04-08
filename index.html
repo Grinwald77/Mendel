@@ -119,8 +119,8 @@ let groups=5;
 let mode="money";
 
 function generatePeriods(){
-const months=["January","February","March","April","May","June",
-"July","August","September","October","November","December"];
+const months=["Jan.","Feb.","Mar.","Apr.","May","Jun.",
+"Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
 
 let list=[];
 for(let y=2025;y<=2026;y++){
@@ -146,8 +146,8 @@ groups=+groupCount.value||1;
 let html=`<table>
 <tr>
 <th>Group</th>
-<th>Quantity (1)</th><th>Average check (1)</th>
-<th>Quantity (2)</th><th>Average check (2)</th>
+<th>Quantity (1)</th><th>Average Price (1)</th>
+<th>Quantity (2)</th><th>Average Price (2)</th>
 <th>Revenue (1)</th><th>Revenue (2)</th>
 <th>Share (1)</th><th>Share (2)</th><th>Δ Share</th>
 </tr>`;
