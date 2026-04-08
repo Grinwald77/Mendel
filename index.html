@@ -156,7 +156,7 @@ let html=`<table>
 <th rowspan="2">Product Group</th>
 <th colspan="2">Quantity</th>
 <th colspan="2">Average Price</th>
-<th colspan="2">Revenue</th>
+<th colspan="3">Revenue</th>
 <th colspan="2">Share</th>
 <th rowspan="2">Δ Share</th>
 </tr>
@@ -168,6 +168,7 @@ let html=`<table>
 <th id="h_p1"></th>
 <th id="h_r0"></th>
 <th id="h_r1"></th>
+<th>Δ</th>
 <th id="h_s0"></th>
 <th id="h_s1"></th>
 </tr>`;
@@ -181,6 +182,7 @@ html+=`<tr>
 <td><input id="p1_${i}"></td>
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
+<td id="dr_${i}"></td>
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
@@ -195,6 +197,7 @@ html+=`<tr class="total">
 <td id="p1_total"></td>
 <td id="r0_total"></td>
 <td id="r1_total"></td>
+<td id="dr_total"></td>
 <td></td><td></td><td></td>
 </tr>`;
 
@@ -237,7 +240,6 @@ label1.innerText = `${period1.value} (${type1.value})`;
     
 let Q0=0,Q1=0,R0=0,R1=0;
 let r0=[],r1=[];
-let qEffect=0,pEffect=0;
 
 for(let i=0;i<groups;i++){
 
@@ -252,14 +254,12 @@ r1[i]=q1*p1;
 Q0+=q0; Q1+=q1;
 R0+=r0[i]; R1+=r1[i];
 
-let dq=(q1-q0)*p0;
-let dp=q1*(p1-p0);
-
-qEffect+=dq;
-pEffect+=dp;
+let delta=r1[i]-r0[i];
 
 document.getElementById(`r0_${i}`).innerText=format(r0[i]);
 document.getElementById(`r1_${i}`).innerText=format(r1[i]);
+document.getElementById(`dr_${i}`).innerHTML =
+`<span class="${delta>=0?"green":"red"}">${format(delta)}</span>`;
 }
 
 let dR=R1-R0;
@@ -273,6 +273,7 @@ q0_total.innerText=format(Q0);
 q1_total.innerText=format(Q1);
 r0_total.innerText=format(R0);
 r1_total.innerText=format(R1);
+dr_total.innerText=format(dR);
 
 p0_total.innerText=Q0?format(R0/Q0):0;
 p1_total.innerText=Q1?format(R1/Q1):0;
@@ -289,29 +290,6 @@ document.getElementById(`ds_${i}`).innerHTML=
 `<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
-// impact
-let out="";
-for(let i=0;i<groups;i++){
-let name=document.getElementById(`g_${i}`).value;
-let delta=r1[i]-r0[i];
-
-if(mode==="money") out+=`${name}: ${format(delta)}<br>`;
-if(mode==="percent") out+=`${name}: ${(R0?delta/R0*100:0).toFixed(1)}%<br>`;
-if(mode==="share"){
-let s0=r0[i]/R0*100||0;
-let s1=r1[i]/R1*100||0;
-out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
-}
-}
-impact.innerHTML=out;
-
-// factors
-factors.innerHTML=`
-<b>Revenue Factor Analysis:</b><br>
-Quantity effect: ${format(qEffect)} (${(dR?qEffect/dR*100:0).toFixed(1)}%)<br>
-Price effect: ${format(pEffect)} (${(dR?pEffect/dR*100:0).toFixed(1)}%)
-`;
-
 }
 
 function format(n){ return Math.round(n).toLocaleString('en-US'); }
@@ -320,7 +298,6 @@ function togglePanel(){
 panel.style.display = panel.style.display==="block"?"none":"block";
 }
 
-// ENTER
 function addEnterNav(){
 document.querySelectorAll("input").forEach((el,i,arr)=>{
 el.onkeydown=e=>{
@@ -329,7 +306,6 @@ if(e.key==="Enter"){e.preventDefault();arr[i+1]?.focus();}
 });
 }
 
-// 🔥 paste fixed
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
@@ -359,7 +335,6 @@ calc();
 });
 }
 
-// 🔥 test fixed
 function fillTest(){
 for(let i=0;i<groups;i++){
 document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
