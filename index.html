@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis by Five Groups</title>
+<title>Revenue Factor Analysis</title>
 
 <style>
 body {
@@ -24,13 +24,9 @@ table {
     width:100%;
     background:white;
     border-radius:12px;
-    overflow:hidden;
 }
 
-td,th {
-    padding:8px;
-    text-align:center;
-}
+td,th { padding:8px; text-align:center; }
 
 .total {
     background:#eef2ff;
@@ -45,6 +41,16 @@ td,th {
     background:white;
     padding:15px;
     border-top:1px solid #ddd;
+}
+
+button {
+    padding:6px 10px;
+    margin:5px;
+}
+
+.active {
+    background:#4a6cff;
+    color:white;
 }
 
 .green { color:green; }
@@ -89,15 +95,24 @@ Number of Groups:
 <div id="tableContainer"></div>
 
 <div class="panel">
+
 <div><b id="label0"></b> <span id="R0_span"></span></div>
 <div><b id="label1"></b> <span id="R1_span"></span></div>
 <div><b>Revenue Change:</b> <span id="dr"></span></div>
+
+<button onclick="setMode('money')" id="btn_money" class="active">Amount</button>
+<button onclick="setMode('percent')" id="btn_percent">Percent</button>
+<button onclick="setMode('share')" id="btn_share">Share</button>
+<button onclick="fillTest()">Test</button>
+
 <div id="impact"></div>
+
 </div>
 
 <script>
 
 let groups=5;
+let mode="money";
 
 function generatePeriods(){
 const months=["January","February","March","April","May","June",
@@ -162,12 +177,21 @@ html+=`<tr class="total">
 html+=`</table>`;
 tableContainer.innerHTML=html;
 
+addEnterNav();
+calc();
+
+// фокус в первую ячейку
+document.getElementById('q0_0')?.focus();
+}
+
+function setMode(m){
+mode=m;
+document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+document.getElementById("btn_"+m).classList.add("active");
 calc();
 }
 
-function format(n){
-return Math.round(n).toLocaleString('en-US');
-}
+function format(n){ return Math.round(n).toLocaleString('en-US'); }
 
 function updateLabels(){
 label0.innerText=`${period0.value} (${type0.value})`;
@@ -198,7 +222,6 @@ document.getElementById(`r0_${i}`).innerText=format(r0[i]);
 document.getElementById(`r1_${i}`).innerText=format(r1[i]);
 }
 
-// totals
 R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
 dr.innerText=format(R1-R0);
@@ -208,13 +231,10 @@ q1_total.innerText=format(Q1);
 r0_total.innerText=format(R0);
 r1_total.innerText=format(R1);
 
-// weighted average
 p0_total.innerText=Q0?format(R0/Q0):0;
 p1_total.innerText=Q1?format(R1/Q1):0;
 
-// shares
 for(let i=0;i<groups;i++){
-
 let s0=R0?r0[i]/R0*100:0;
 let s1=R1?r1[i]/R1*100:0;
 let ds=s1-s0;
@@ -229,12 +249,39 @@ document.getElementById(`ds_${i}`).innerHTML=
 let out="";
 for(let i=0;i<groups;i++){
 let delta=r1[i]-r0[i];
-out+=`Group ${i+1}: ${format(delta)}<br>`;
+let pct=R0?delta/R0*100:0;
+
+if(mode==="money") out+=`Group ${i+1}: ${format(delta)}<br>`;
+if(mode==="percent") out+=`Group ${i+1}: ${pct.toFixed(1)}%<br>`;
+if(mode==="share"){
+let s0=r0[i]/R0*100||0;
+let s1=r1[i]/R1*100||0;
+out+=`Group ${i+1}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
+}
 }
 
 impact.innerHTML=out;
-
 }
+
+// ENTER navigation
+function addEnterNav(){
+let inputs=document.querySelectorAll("input");
+inputs.forEach((el,i)=>{
+el.addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+e.preventDefault();
+inputs[i+1]?.focus();
+}});
+});
+}
+
+// ENTER на количестве групп
+groupCount.addEventListener("keydown",function(e){
+if(e.key==="Enter"){
+e.preventDefault();
+build();
+}
+});
 
 document.addEventListener("input",calc);
 document.addEventListener("change",calc);
