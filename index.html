@@ -5,12 +5,7 @@
 <title>Revenue Factor Analysis</title>
 
 <style>
-body {
-    font-family: -apple-system, sans-serif;
-    background:#f4f6fa;
-    margin:0;
-    padding:15px;
-}
+body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
 
 input, select {
     width:120px;
@@ -21,39 +16,22 @@ input, select {
 
 .group-name { width:160px; }
 
-table {
-    width:100%;
-    background:white;
-    border-radius:12px;
-}
-
+table { width:100%; background:white; border-radius:12px; }
 td,th { padding:8px; text-align:center; }
-th { white-space: pre-line; }
+th { white-space:pre-line; }
 
-.total {
-    background:#eef2ff;
-    font-weight:bold;
-}
+.total { background:#eef2ff; font-weight:bold; }
 
-.top-bar {
-    display:flex;
-    gap:15px;
-    flex-wrap:wrap;
-}
+.top-bar { display:flex; gap:15px; flex-wrap:wrap; }
 
 button {
     padding:6px 12px;
     border:none;
     border-radius:8px;
     background:#e0e6ff;
-    cursor:pointer;
 }
 
-.active {
-    background:#4a6cff;
-    color:white;
-}
-
+.active { background:#4a6cff; color:white; }
 .green { color:green; }
 .red { color:red; }
 
@@ -73,10 +51,7 @@ button {
 
 <div class="top-bar">
 
-<div>
-Groups<br>
-<input id="groupCount" value="5">
-</div>
+<div>Groups<br><input id="groupCount" value="5"></div>
 
 <div>
 Period Type<br>
@@ -143,32 +118,20 @@ let groups=5;
 let mode="money";
 
 function generatePeriods(){
-let type=periodType.value;
+let t=periodType.value;
 let list=[];
 
-if(type==="months"){
-const m=["Jan.","Feb.","Mar.","Apr.","May","Jun.",
-"Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
-for(let y=2025;y<=2026;y++){
-for(let i=0;i<12;i++){
-list.push(m[i]+" "+y);
-}}}
-
-if(type==="weeks"){
-for(let y=2025;y<=2026;y++){
-for(let w=1;w<=52;w++){
-list.push("W"+w+" "+y);
-}}}
-
-if(type==="quarters"){
-for(let y=2025;y<=2026;y++){
-for(let q=1;q<=4;q++){
-list.push("Q"+q+" "+y);
-}}}
-
-if(type==="years"){
-list=["2025","2026"];
+if(t==="months"){
+let m=["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
+for(let y=2025;y<=2026;y++) for(let i=0;i<12;i++) list.push(m[i]+" "+y);
 }
+if(t==="weeks"){
+for(let y=2025;y<=2026;y++) for(let i=1;i<=52;i++) list.push("W"+i+" "+y);
+}
+if(t==="quarters"){
+for(let y=2025;y<=2026;y++) for(let i=1;i<=4;i++) list.push("Q"+i+" "+y);
+}
+if(t==="years") list=["2025","2026"];
 
 return list;
 }
@@ -189,12 +152,10 @@ let html=`<table>
 
 <tr>
 <th rowspan="2">Product Group</th>
-
 <th colspan="2">Quantity</th>
 <th colspan="2">Average Price</th>
 <th colspan="2">Revenue</th>
 <th colspan="2">Share</th>
-
 <th rowspan="2">Δ Share</th>
 </tr>
 
@@ -207,8 +168,7 @@ let html=`<table>
 <th id="h_r1"></th>
 <th id="h_s0"></th>
 <th id="h_s1"></th>
-</tr>
-`;
+</tr>`;
 
 for(let i=0;i<groups;i++){
 html+=`<tr>
@@ -274,10 +234,10 @@ let qEffect=0,pEffect=0;
 
 for(let i=0;i<groups;i++){
 
-let q0=+q0_[i]?.value||0;
-let q1=+q1_[i]?.value||0;
-let p0=+p0_[i]?.value||0;
-let p1=+p1_[i]?.value||0;
+let q0=+document.getElementById(`q0_${i}`).value||0;
+let q1=+document.getElementById(`q1_${i}`).value||0;
+let p0=+document.getElementById(`p0_${i}`).value||0;
+let p1=+document.getElementById(`p1_${i}`).value||0;
 
 r0[i]=q0*p0;
 r1[i]=q1*p1;
@@ -291,8 +251,8 @@ let dp=q1*(p1-p0);
 qEffect+=dq;
 pEffect+=dp;
 
-r0_[i].innerText=format(r0[i]);
-r1_[i].innerText=format(r1[i]);
+document.getElementById(`r0_${i}`).innerText=format(r0[i]);
+document.getElementById(`r1_${i}`).innerText=format(r1[i]);
 }
 
 let dR=R1-R0;
@@ -316,15 +276,16 @@ let s0=R0?r0[i]/R0*100:0;
 let s1=R1?r1[i]/R1*100:0;
 let ds=s1-s0;
 
-s0_[i].innerText=s0.toFixed(1)+"%";
-s1_[i].innerText=s1.toFixed(1)+"%";
-ds_[i].innerHTML=`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
+document.getElementById(`s0_${i}`).innerText=s0.toFixed(1)+"%";
+document.getElementById(`s1_${i}`).innerText=s1.toFixed(1)+"%";
+document.getElementById(`ds_${i}`).innerHTML=
+`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
 // impact
 let out="";
 for(let i=0;i<groups;i++){
-let name=g_[i].value;
+let name=document.getElementById(`g_${i}`).value;
 let delta=r1[i]-r0[i];
 
 if(mode==="money") out+=`${name}: ${format(delta)}<br>`;
@@ -337,7 +298,7 @@ out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 }
 impact.innerHTML=out;
 
-// ✅ правильные проценты факторов
+// factors
 factors.innerHTML=`
 <b>Factor Analysis:</b><br>
 Quantity effect: ${format(qEffect)} (${(dR?qEffect/dR*100:0).toFixed(1)}%)<br>
@@ -352,6 +313,7 @@ function togglePanel(){
 panel.style.display = panel.style.display==="block"?"none":"block";
 }
 
+// ENTER
 function addEnterNav(){
 document.querySelectorAll("input").forEach((el,i,arr)=>{
 el.onkeydown=e=>{
@@ -360,6 +322,7 @@ if(e.key==="Enter"){e.preventDefault();arr[i+1]?.focus();}
 });
 }
 
+// 🔥 paste fixed
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
@@ -374,14 +337,14 @@ let rows=text.trim().split("\n");
 rows.forEach((row,i)=>{
 if(i>=groups) return;
 
-let c=row.split("\t");
+let c=row.split(/\t/);
 if(c.length<5) return;
 
-g_[i].value=c[0];
-q0_[i].value=c[1];
-q1_[i].value=c[2];
-p0_[i].value=c[3];
-p1_[i].value=c[4];
+document.getElementById(`g_${i}`).value=c[0];
+document.getElementById(`q0_${i}`).value=c[1];
+document.getElementById(`q1_${i}`).value=c[2];
+document.getElementById(`p0_${i}`).value=c[3];
+document.getElementById(`p1_${i}`).value=c[4];
 });
 
 calc();
@@ -389,12 +352,13 @@ calc();
 });
 }
 
+// 🔥 test fixed
 function fillTest(){
 for(let i=0;i<groups;i++){
-q0_[i].value=Math.floor(Math.random()*10)+1;
-q1_[i].value=Math.floor(Math.random()*10)+1;
-p0_[i].value=Math.floor(Math.random()*20000)+1000;
-p1_[i].value=Math.floor(Math.random()*20000)+1000;
+document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
+document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
 }
 calc();
 }
