@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis (Quantity * Av.Price) </title>
+<title>Revenue Factor Analysis (Quantity * Av.Price)</title>
 
 <style>
 body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
@@ -49,7 +49,6 @@ button {
 
 <h2>Revenue Factor Analysis</h2>
 
-<!-- ✅ ВЕРХНИЙ БЛОК ВОССТАНОВЛЕН -->
 <div class="top-bar">
 
 <div>Groups<br><input id="groupCount" value="5"></div>
@@ -117,36 +116,17 @@ Current Period<br>
 
 <script>
 
-// ==============================
-// 🔥 FACTOR MODEL
-// ==============================
 const FactorModel = {
-
-    revenue(q,p){
-        return q*p;
-    },
-
+    revenue(q,p){ return q*p; },
     decompose(q0,q1,p0,p1){
         return {
             quantity:(q1-q0)*p0,
             price:q1*(p1-p0)
         };
     },
-
-    delta(r0,r1){
-        return r1-r0;
-    },
-
-    percent(delta,total){
-        return total?delta/total*100:0;
-    }
-
+    delta(r0,r1){ return r1-r0; },
+    percent(delta,total){ return total?delta/total*100:0; }
 };
-
-
-// ==============================
-// APP
-// ==============================
 
 let groups=5;
 let mode="money";
@@ -304,6 +284,18 @@ dr_total.innerText=format(dR);
 R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
 dr.innerText=format(dR);
+
+// ✅ FIX: SHARE BLOCK
+for(let i=0;i<groups;i++){
+let s0 = R0 ? r0[i]/R0*100 : 0;
+let s1 = R1 ? r1[i]/R1*100 : 0;
+let ds = s1 - s0;
+
+document.getElementById(`s0_${i}`).innerText = s0.toFixed(1)+"%";
+document.getElementById(`s1_${i}`).innerText = s1.toFixed(1)+"%";
+document.getElementById(`ds_${i}`).innerHTML =
+`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
+}
 
 let out="";
 for(let i=0;i<groups;i++){
