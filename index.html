@@ -314,26 +314,22 @@ document.getElementById(`ds_${i}`).innerHTML =
 // IMPACT
 let out="";
 for(let i=0;i<groups;i++){
-
 let name=document.getElementById(`g_${i}`).value;
 let delta=FactorModel.delta(r0[i],r1[i]);
-
 if(mode==="money"){
     out+=`${name}: ${format(delta)}<br>`;
 }
-
 if(mode==="percent"){
     out+=`${name}: ${FactorModel.percent(delta,dR).toFixed(1)}%<br>`;
 }
-
 if(mode==="share"){
-
     let s0 = R0 ? r0[i]/R0*100 : 0;
     let s1 = R1 ? r1[i]/R1*100 : 0;
-
-    out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
+    let ds = s1 - s0;
+    out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}% (${ds.toFixed(1)} pp)<br>`;
 }
-
+    
+}
 impact.innerHTML=out;
 
 // FACTORS
