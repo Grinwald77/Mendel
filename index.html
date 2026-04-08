@@ -153,30 +153,36 @@ groups=+groupCount.value||1;
 let html=`<table>
 
 <tr>
-<th rowspan="2">Product Group</th>
-<th colspan="2" id="h_period0"></th>
-<th colspan="2" id="h_period1"></th>
-<th rowspan="2" id="h_r0"></th>
-<th rowspan="2" id="h_r1"></th>
-<th rowspan="2" id="h_s0"></th>
-<th rowspan="2" id="h_s1"></th>
-<th rowspan="2">Δ Share</th>
-</tr>
+<th>Product Group</th>
 
-<tr>
-<th></th><th></th><th></th><th></th>
+<th id="h_q0"></th>
+<th id="h_q1"></th>
+
+<th id="h_p0"></th>
+<th id="h_p1"></th>
+
+<th id="h_r0"></th>
+<th id="h_r1"></th>
+
+<th id="h_s0"></th>
+<th id="h_s1"></th>
+<th>Δ Share</th>
 </tr>
 `;
 
 for(let i=0;i<groups;i++){
 html+=`<tr>
 <td><input class="group-name" id="g_${i}" value="Group ${i+1}"></td>
+
 <td><input id="q0_${i}"></td>
-<td><input id="p0_${i}"></td>
 <td><input id="q1_${i}"></td>
+
+<td><input id="p0_${i}"></td>
 <td><input id="p1_${i}"></td>
+
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
+
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
@@ -185,12 +191,16 @@ html+=`<tr>
 
 html+=`<tr class="total">
 <td>Total</td>
+
 <td id="q0_total"></td>
-<td id="p0_total"></td>
 <td id="q1_total"></td>
+
+<td id="p0_total"></td>
 <td id="p1_total"></td>
+
 <td id="r0_total"></td>
 <td id="r1_total"></td>
+
 <td></td><td></td><td></td>
 </tr>`;
 
@@ -210,21 +220,17 @@ function updateHeaders(){
 let p0 = `${period0.value} (${type0.value})`;
 let p1 = `${period1.value} (${type1.value})`;
 
-document.getElementById("h_period0").innerText = p0;
-document.getElementById("h_period1").innerText = p1;
+h_q0.innerText = `Quantity\n${p0}`;
+h_q1.innerText = `Quantity\n${p1}`;
 
-let headers = document.querySelectorAll("table tr:nth-child(2) th");
+h_p0.innerText = `Average Price\n${p0}`;
+h_p1.innerText = `Average Price\n${p1}`;
 
-headers[0].innerText = `Quantity\n${p0}`;
-headers[1].innerText = `Average Price\n${p0}`;
-headers[2].innerText = `Quantity\n${p1}`;
-headers[3].innerText = `Average Price\n${p1}`;
+h_r0.innerText = `Revenue\n${p0}`;
+h_r1.innerText = `Revenue\n${p1}`;
 
-document.getElementById("h_r0").innerText = `Revenue\n${p0}`;
-document.getElementById("h_r1").innerText = `Revenue\n${p1}`;
-
-document.getElementById("h_s0").innerText = `Share\n${p0}`;
-document.getElementById("h_s1").innerText = `Share\n${p1}`;
+h_s0.innerText = `Share\n${p0}`;
+h_s1.innerText = `Share\n${p1}`;
 }
 
 function setMode(m){
@@ -252,8 +258,9 @@ let r0=[],r1=[];
 for(let i=0;i<groups;i++){
 
 let q0=+document.getElementById(`q0_${i}`)?.value||0;
-let p0=+document.getElementById(`p0_${i}`)?.value||0;
 let q1=+document.getElementById(`q1_${i}`)?.value||0;
+
+let p0=+document.getElementById(`p0_${i}`)?.value||0;
 let p1=+document.getElementById(`p1_${i}`)?.value||0;
 
 r0[i]=q0*p0;
@@ -272,6 +279,7 @@ dr.innerText=format(R1-R0);
 
 q0_total.innerText=format(Q0);
 q1_total.innerText=format(Q1);
+
 r0_total.innerText=format(R0);
 r1_total.innerText=format(R1);
 
@@ -283,10 +291,10 @@ let s0=R0?r0[i]/R0*100:0;
 let s1=R1?r1[i]/R1*100:0;
 let ds=s1-s0;
 
-document.getElementById(`s0_${i}`).innerText=s0.toFixed(1)+"%";
-document.getElementById(`s1_${i}`).innerText=s1.toFixed(1)+"%";
-document.getElementById(`ds_${i}`).innerHTML=
-`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
+s0_[i].innerText=s0.toFixed(1)+"%";
+s1_[i].innerText=s1.toFixed(1)+"%";
+
+ds_[i].innerHTML=`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
 let out="";
@@ -309,7 +317,6 @@ out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 impact.innerHTML=out;
 }
 
-// ENTER navigation
 function addEnterNav(){
 let inputs=document.querySelectorAll("input");
 inputs.forEach((el,i)=>{
@@ -321,7 +328,6 @@ inputs[i+1]?.focus();
 });
 }
 
-// paste
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
@@ -341,10 +347,10 @@ if(cols.length<5) return;
 
 document.getElementById(`g_${i}`).value=cols[0];
 
-['q0_','p0_','q1_','p1_'].forEach((id,j)=>{
-let el=document.getElementById(id+i);
-if(el) el.value=(cols[j+1]||"").replace(',', '.');
-});
+document.getElementById(`q0_${i}`).value=cols[1];
+document.getElementById(`p0_${i}`).value=cols[2];
+document.getElementById(`q1_${i}`).value=cols[3];
+document.getElementById(`p1_${i}`).value=cols[4];
 });
 
 calc();
@@ -353,15 +359,14 @@ calc();
 });
 }
 
-// test
 function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
 function fillTest(){
 for(let i=0;i<groups;i++){
-document.getElementById(`q0_${i}`).value=rand(1,10);
-document.getElementById(`p0_${i}`).value=rand(1000,20000);
-document.getElementById(`q1_${i}`).value=rand(1,10);
-document.getElementById(`p1_${i}`).value=rand(1000,20000);
+q0_[i].value=rand(1,10);
+q1_[i].value=rand(1,10);
+p0_[i].value=rand(1000,20000);
+p1_[i].value=rand(1000,20000);
 }
 calc();
 }
