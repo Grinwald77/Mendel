@@ -93,7 +93,7 @@ Current Period<br>
 
 <br>
 
-<button onclick="togglePanel()">Analytical Insights</button>
+<button onclick="togglePanel()">Revenue analysis</button>
 
 <div class="panel" id="panel">
 
@@ -307,7 +307,7 @@ impact.innerHTML=out;
 
 // factors
 factors.innerHTML=`
-<b>Factor Analysis:</b><br>
+<b>Revenue Factor Analysis:</b><br>
 Quantity effect: ${format(qEffect)} (${(dR?qEffect/dR*100:0).toFixed(1)}%)<br>
 Price effect: ${format(pEffect)} (${(dR?pEffect/dR*100:0).toFixed(1)}%)
 `;
