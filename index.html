@@ -2,9 +2,119 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.3 23:11 / Apr.08, 2026</title>
+<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.4 23:31 / Apr.08, 2026</title>
+
+<style>
+body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
+
+input, select {
+    width:240px;
+    padding:6px;
+    border-radius:6px;
+    border:1px solid #ddd;
+}
+
+.group-name { width:160px; }
+
+table { width:100%; background:white; border-radius:12px; }
+td,th { padding:8px; text-align:center; }
+th { white-space:pre-line; }
+
+.total { background:#eef2ff; font-weight:bold; }
+
+.top-bar { display:flex; gap:15px; flex-wrap:wrap; }
+
+button {
+    padding:6px 12px;
+    border:none;
+    border-radius:8px;
+    background:#e0e6ff;
+}
+
+.green { color:green; }
+.red { color:red; }
+
+.panel {
+    display:none;
+    margin-top:15px;
+    background:white;
+    padding:15px;
+    border-radius:12px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Revenue Factor Analysis</h2>
+
+<div class="top-bar">
+
+<div>Groups<br><input id="groupCount" value="5"></div>
+
+<div>
+Period Type<br>
+<select id="periodType" onchange="fillSelectors()">
+<option value="months">Months</option>
+<option value="weeks">Weeks</option>
+<option value="quarters">Quarters</option>
+<option value="years">Years</option>
+</select>
+</div>
+
+<div>
+Source Period<br>
+<select id="period0"></select>
+<select id="type0">
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
+</select>
+</div>
+
+<div>
+Current Period<br>
+<select id="period1"></select>
+<select id="type1">
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
+</select>
+</div>
+
+<div>
+<br>
+<button onclick="build()">Build</button>
+<button onclick="fillTest()">Test</button>
+</div>
+
+</div>
+
+<br>
+
+<div id="tableContainer"></div>
+
+<br>
+
+<button onclick="togglePanel()">Revenue analysis</button>
+
+<div class="panel" id="panel">
+
+<div><b id="label0"></b>: <span id="R0_span"></span></div>
+<div><b id="label1"></b>: <span id="R1_span"></span></div>
+<div><b>Revenue Change:</b> <span id="dr"></span></div>
+
+<hr>
+
+<div id="factors"></div>
+
+</div>
+
 <script>
 
+// ==============================
+// FACTOR MODEL
+// ==============================
 const FactorModel = {
     revenue(q,p){ return q*p; },
     decompose(q0,q1,p0,p1){
@@ -74,8 +184,7 @@ let html=`<table>
 </tr>`;
 
 for(let i=0;i<groups;i++){
-html+=`
-<tr>
+html+=`<tr>
 <td><input class="group-name" id="g_${i}" value="Group ${i+1}"></td>
 <td><input id="q0_${i}"></td>
 <td><input id="q1_${i}"></td>
@@ -84,15 +193,14 @@ html+=`
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
 <td id="dr_${i}"></td>
+<td id="impact_${i}"></td>
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
-<td id="impact_${i}"></td>
 </tr>`;
 }
 
-html+=`
-<tr class="total">
+html+=`<tr class="total">
 <td><b>Total</b></td>
 <td></td><td></td><td></td><td></td>
 <td id="r0_total"></td>
@@ -100,9 +208,9 @@ html+=`
 <td id="dr_total"></td>
 <td></td>
 <td></td><td></td><td></td>
-</tr>
-</table>`;
+</tr>`;
 
+html+=`</table>`;
 tableContainer.innerHTML=html;
 
 updateHeaders();
@@ -157,8 +265,7 @@ let delta=r1[i]-r0[i];
 
 document.getElementById(`r0_${i}`).innerText=format(r0[i]);
 document.getElementById(`r1_${i}`).innerText=format(r1[i]);
-document.getElementById(`dr_${i}`).innerHTML=
-`<span class="${delta>=0?"green":"red"}">${format(delta)}</span>`;
+document.getElementById(`dr_${i}`).innerHTML=`<span class="${delta>=0?"green":"red"}">${format(delta)}</span>`;
 }
 
 let dR=R1-R0;
@@ -171,6 +278,7 @@ R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
 dr.innerText=format(dR);
 
+// SHARE + IMPACT
 for(let i=0;i<groups;i++){
 let s0 = R0 ? r0[i]/R0*100 : 0;
 let s1 = R1 ? r1[i]/R1*100 : 0;
@@ -184,18 +292,47 @@ document.getElementById(`ds_${i}`).innerHTML =
 document.getElementById(`impact_${i}`).innerText = impact.toFixed(1)+"%";
 }
 
+// FACTORS
+factors.innerHTML=`
+<b>Revenue Factor Analysis:</b><br>
+Quantity: ${format(qEffect)} (${FactorModel.percent(qEffect,dR).toFixed(1)}%)<br>
+Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
+`;
 }
 
+// 🔥 НОВАЯ НАВИГАЦИЯ (ГЛАВНОЕ ИЗМЕНЕНИЕ)
 function addEnterNav(){
-let inputs = document.querySelectorAll("input");
-inputs.forEach((el,i)=>{
-el.onkeydown=e=>{
-if(e.key==="Enter"){
+
+const elements = document.querySelectorAll("input, select");
+
+elements.forEach((el,i)=>{
+
+el.addEventListener("keydown", e=>{
+
+if(el.tagName==="INPUT" && e.key==="Enter"){
 e.preventDefault();
-inputs[i+1]?.focus();
+elements[i+1]?.focus();
 }
-};
+
+if(el.tagName==="SELECT" && e.key==="Enter"){
+
+if(el.dataset.open==="true"){
+el.dataset.open="false";
+return;
+}
+
+e.preventDefault();
+elements[i+1]?.focus();
+}
+
+if(el.tagName==="SELECT" && (e.key==="ArrowDown" || e.key==="ArrowUp")){
+el.dataset.open="true";
+}
+
 });
+
+});
+
 }
 
 function addPasteSupport(){
@@ -245,5 +382,9 @@ document.addEventListener("change",calc);
 
 fillSelectors();
 build();
+addEnterNav();
 
 </script>
+
+</body>
+</html>
