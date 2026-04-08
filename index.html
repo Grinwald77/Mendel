@@ -84,6 +84,25 @@ button {
 .test-btn:active {
     transform: scale(0.97);
 }
+    /* tooltip */
+.paste-hint {
+    position: absolute;
+    background: #111;
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    width: 260px;
+    line-height: 1.4;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.2s;
+    z-index: 999;
+}
+
+.paste-hint.show {
+    opacity: 1;
 }
 </style>
 </head>
@@ -229,7 +248,21 @@ let html=`<table>
 
 for(let i=0;i<groups;i++){
 html+=`<tr>
-<td><input class="group-name" id="g_${i}" value="Group ${i+1}"></td>
+
+<td style="position:relative;">
+<input class="group-name" id="g_${i}" value="Group ${i+1}">
+
+${i===0 ? `<div class="paste-hint" id="pasteHint">
+You can paste full table here (Ctrl+V)<br><br>
+Format:<br>
+Group | Q0 | Q1 | P0 | P1<br><br>
+Only numbers:<br>
+1 / 1.5 / 25000 / 25001.5<br><br>
+Rows must match number of groups
+</div>` : ``}
+
+</td>
+
 <td><input id="q0_${i}"></td>
 <td><input id="q1_${i}"></td>
 <td><input id="p0_${i}"></td>
@@ -241,6 +274,7 @@ html+=`<tr>
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
+
 </tr>`;
 }
 
@@ -447,6 +481,24 @@ fillSelectors();
 build();
 addEnterNav();
 
+// tooltip hover
+document.addEventListener("mouseover", e=>{
+if(e.target.id==="g_0"){
+let hint = document.getElementById("pasteHint");
+if(hint){
+let rect = e.target.getBoundingClientRect();
+hint.style.top = (rect.bottom + window.scrollY + 6) + "px";
+hint.style.left = (rect.left + window.scrollX) + "px";
+hint.classList.add("show");
+}
+}
+});
+
+document.addEventListener("mouseout", e=>{
+if(e.target.id==="g_0"){
+document.getElementById("pasteHint")?.classList.remove("show");
+}
+});
 </script>
 
 </body>
