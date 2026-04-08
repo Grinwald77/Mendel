@@ -297,7 +297,7 @@ document.getElementById(`ds_${i}`).innerHTML=
 `<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
-// ВКЛАДЫ
+// ВКЛАДЫ ПО ГРУППАМ (оставлено как было)
 let out="";
 for(let i=0;i<groups;i++){
 let name=document.getElementById(`g_${i}`).value;
@@ -313,20 +313,16 @@ out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 }
 impact.innerHTML=out;
 
-// ✅ ИСПРАВЛЕННЫЕ ФАКТОРЫ
-let mixEffect = dR - qEffect - pEffect;
+// ✅ КОРРЕКТНЫЕ 2 ФАКТОРА (без mix)
+let base = Math.abs(qEffect) + Math.abs(pEffect);
 
-let base = Math.abs(qEffect) + Math.abs(pEffect) + Math.abs(mixEffect);
-
-let qPct = base ? qEffect / base * 100 : 0;
-let pPct = base ? pEffect / base * 100 : 0;
-let mPct = base ? mixEffect / base * 100 : 0;
+let qPct = base ? Math.abs(qEffect) / base * 100 : 0;
+let pPct = base ? Math.abs(pEffect) / base * 100 : 0;
 
 factors.innerHTML=`
 <b>Revenue Factor Analysis:</b><br>
 Quantity effect: ${format(qEffect)} (${qPct.toFixed(1)}%)<br>
-Price effect: ${format(pEffect)} (${pPct.toFixed(1)}%)<br>
-Mix effect: ${format(mixEffect)} (${mPct.toFixed(1)}%)
+Price effect: ${format(pEffect)} (${pPct.toFixed(1)}%)
 `;
 
 }
