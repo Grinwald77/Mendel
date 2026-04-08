@@ -21,7 +21,7 @@ input, select {
 }
 
 .group-name {
-    width:140px;
+    width:160px;
 }
 
 table {
@@ -141,20 +141,18 @@ period1.selectedIndex=1;
 
 function build(){
 
-function build(){
-
 groups=+groupCount.value||1;
 
 let html=`<table>
 
 <tr>
 <th rowspan="2">Product Group</th>
-<th colspan="2">Planned Period</th>
-<th colspan="2">Actual Period</th>
-<th rowspan="2">Revenue (Planned)</th>
-<th rowspan="2">Revenue (Actual)</th>
-<th rowspan="2">Share (Planned)</th>
-<th rowspan="2">Share (Actual)</th>
+<th colspan="2">Planned / Actual Period 1</th>
+<th colspan="2">Planned / Actual Period 2</th>
+<th rowspan="2">Revenue (Period 1)</th>
+<th rowspan="2">Revenue (Period 2)</th>
+<th rowspan="2">Share (Period 1)</th>
+<th rowspan="2">Share (Period 2)</th>
 <th rowspan="2">Δ Share</th>
 </tr>
 
@@ -295,14 +293,12 @@ inputs[i+1]?.focus();
 });
 }
 
-// 🔥 ВСТАВКА ВСЕЙ ТАБЛИЦЫ
+// paste
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
 
 let text=e.clipboardData.getData("text");
-
-// допускаем и табы и множественные пробелы
 if(!text.includes("\n")) return;
 
 e.preventDefault();
@@ -312,27 +308,15 @@ let rows=text.trim().split(/\n/);
 rows.forEach((row,i)=>{
 if(i>=groups) return;
 
-// разбиваем: табы ИЛИ несколько пробелов
 let cols=row.trim().split(/\t|\s{2,}/);
+if(cols.length<5) return;
 
-if(cols.length < 5) return;
+document.getElementById(`g_${i}`).value=cols[0];
 
-// 0 — имя группы
-let nameInput=document.getElementById(`g_${i}`);
-if(nameInput) nameInput.value=cols[0];
-
-// 1-4 — данные
-let ids=['q0_','p0_','q1_','p1_'];
-
-for(let j=0;j<4;j++){
-let val = cols[j+1] || "";
-
-let inputEl=document.getElementById(ids[j]+i);
-if(inputEl){
-inputEl.value = val.replace(',', '.');
-}
-}
-
+['q0_','p0_','q1_','p1_'].forEach((id,j)=>{
+let el=document.getElementById(id+i);
+if(el) el.value=(cols[j+1]||"").replace(',', '.');
+});
 });
 
 calc();
@@ -340,6 +324,7 @@ calc();
 });
 });
 }
+
 // test
 function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
@@ -353,7 +338,6 @@ document.getElementById(`p1_${i}`).value=rand(1000,20000);
 calc();
 }
 
-// ENTER на groups
 groupCount.addEventListener("keydown",function(e){
 if(e.key==="Enter"){ e.preventDefault(); build(); }
 });
