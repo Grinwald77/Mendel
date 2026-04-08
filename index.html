@@ -10,11 +10,11 @@ body {
     background:#f4f6fa;
     margin:0;
     padding:15px;
-    padding-bottom:220px;
+    padding-bottom:260px;
 }
 
 input, select {
-    width:120px;
+    width:100px;
     padding:6px;
     border-radius:6px;
     border:1px solid #ddd;
@@ -47,6 +47,16 @@ td,th {
     border-top:1px solid #ddd;
 }
 
+button {
+    padding:6px 10px;
+    margin:5px;
+}
+
+.active {
+    background:#4a6cff;
+    color:white;
+}
+
 .green { color:green; }
 .red { color:red; }
 </style>
@@ -59,12 +69,11 @@ td,th {
 <div>
 Number of Groups:
 <input id="groupCount" value="5">
-<button onclick="build()">Build Model</button>
+<button onclick="build()">Build</button>
 </div>
 
 <br>
 
-<!-- PERIOD SELECTORS -->
 <div style="display:flex; gap:20px;">
 
 <div>
@@ -92,65 +101,61 @@ Number of Groups:
 <div id="tableContainer"></div>
 
 <div class="panel">
+
 <div><b id="label0">Period 1:</b> <span id="R0"></span></div>
 <div><b id="label1">Period 2:</b> <span id="R1"></span></div>
 <div><b>Revenue Change:</b> <span id="dr"></span></div>
+
+<button onclick="setMode('money')" id="btn_money" class="active">Revenue</button>
+<button onclick="setMode('percent')" id="btn_percent">Percent</button>
+<button onclick="setMode('share')" id="btn_share">Share</button>
+<button onclick="fillTest()">Test</button>
+
+<div id="impact"></div>
+
 </div>
 
 <script>
 
 let groups=5;
+let mode="money";
 
 function generatePeriods(){
-
-const months = [
-"January","February","March","April","May","June",
-"July","August","September","October","November","December"
-];
+const months=["January","February","March","April","May","June",
+"July","August","September","October","November","December"];
 
 let list=[];
-
 for(let y=2025;y<=2026;y++){
 for(let m=0;m<12;m++){
 list.push(months[m]+" "+y);
-}
-}
-
+}}
 return list;
 }
 
-function fillPeriodSelectors(){
-
-let periods = generatePeriods();
-
+function fillSelectors(){
+let list=generatePeriods();
 let html="";
-
-periods.forEach(p=>{
-html+=`<option>${p}</option>`;
-});
-
-document.getElementById('period0').innerHTML=html;
-document.getElementById('period1').innerHTML=html;
-
-// дефолт
-document.getElementById('period0').selectedIndex=0;
-document.getElementById('period1').selectedIndex=1;
+list.forEach(p=>html+=`<option>${p}</option>`);
+period0.innerHTML=html;
+period1.innerHTML=html;
+period1.selectedIndex=1;
 }
 
 function build(){
 
-groups = +document.getElementById('groupCount').value || 1;
+groups=+groupCount.value||1;
 
-let html = `<table>
+let html=`<table>
 <tr>
 <th>Group</th>
 <th>Quantity (1)</th><th>Average Price (1)</th>
 <th>Quantity (2)</th><th>Average Price (2)</th>
 <th>Revenue (1)</th><th>Revenue (2)</th>
+<th>Share (1)</th><th>Share (2)</th><th>Δ Share</th>
 </tr>`;
 
 for(let i=0;i<groups;i++){
-html += `<tr>
+html+=`<tr>
 <td>Group ${i+1}</td>
 <td><input id="q0_${i}"></td>
 <td><input id="p0_${i}"></td>
@@ -158,10 +163,13 @@ html += `<tr>
 <td><input id="p1_${i}"></td>
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
+<td id="s0_${i}"></td>
+<td id="s1_${i}"></td>
+<td id="ds_${i}"></td>
 </tr>`;
 }
 
-html += `<tr class="total">
+html+=`<tr class="total">
 <td>Total</td>
 <td id="q0_total"></td>
 <td id="p0_total"></td>
@@ -169,80 +177,122 @@ html += `<tr class="total">
 <td id="p1_total"></td>
 <td id="r0_total"></td>
 <td id="r1_total"></td>
+<td></td><td></td><td></td>
 </tr>`;
 
-html += `</table>`;
+html+=`</table>`;
+tableContainer.innerHTML=html;
 
-document.getElementById('tableContainer').innerHTML = html;
-
+addEnterNav();
 calc();
 }
 
-function format(n){
-return n.toLocaleString('en-US');
-}
+function format(n){return n.toLocaleString('en-US');}
 
 function updateLabels(){
-
-let p0 = document.getElementById('period0').value;
-let t0 = document.getElementById('type0').value;
-
-let p1 = document.getElementById('period1').value;
-let t1 = document.getElementById('type1').value;
-
-document.getElementById('label0').innerText = `${p0} (${t0})`;
-document.getElementById('label1').innerText = `${p1} (${t1})`;
+label0.innerText=`${period0.value} (${type0.value})`;
+label1.innerText=`${period1.value} (${type1.value})`;
 }
 
 function calc(){
 
 updateLabels();
 
-let totalQ0=0,totalQ1=0;
-let totalR0=0,totalR1=0;
+let Q0=0,Q1=0,R0=0,R1=0;
+let r0=[],r1=[];
 
 for(let i=0;i<groups;i++){
 
-let q0=+document.getElementById('q0_'+i)?.value||0;
-let p0=+document.getElementById('p0_'+i)?.value||0;
-let q1=+document.getElementById('q1_'+i)?.value||0;
-let p1=+document.getElementById('p1_'+i)?.value||0;
+let q0=+q0_[i]?.value||0;
+let p0=+p0_[i]?.value||0;
+let q1=+q1_[i]?.value||0;
+let p1=+p1_[i]?.value||0;
 
-let r0=q0*p0;
-let r1=q1*p1;
+r0[i]=q0*p0;
+r1[i]=q1*p1;
 
-totalQ0+=q0;
-totalQ1+=q1;
-totalR0+=r0;
-totalR1+=r1;
+Q0+=q0; Q1+=q1;
+R0+=r0[i]; R1+=r1[i];
 
-document.getElementById('r0_'+i).innerText=format(r0);
-document.getElementById('r1_'+i).innerText=format(r1);
+document.getElementById(`r0_${i}`).innerText=format(r0[i]);
+document.getElementById(`r1_${i}`).innerText=format(r1[i]);
 }
+
+R0_span.innerText=format(R0);
+R1_span.innerText=format(R1);
+dr.innerText=format(R1-R0);
 
 // totals
-document.getElementById('q0_total').innerText=format(totalQ0);
-document.getElementById('q1_total').innerText=format(totalQ1);
-document.getElementById('r0_total').innerText=format(totalR0);
-document.getElementById('r1_total').innerText=format(totalR1);
+q0_total.innerText=format(Q0);
+q1_total.innerText=format(Q1);
+r0_total.innerText=format(R0);
+r1_total.innerText=format(R1);
 
-let avg0 = totalQ0 ? totalR0/totalQ0 : 0;
-let avg1 = totalQ1 ? totalR1/totalQ1 : 0;
+p0_total.innerText=format(Q0?Math.round(R0/Q0):0);
+p1_total.innerText=format(Q1?Math.round(R1/Q1):0);
 
-document.getElementById('p0_total').innerText=format(Math.round(avg0));
-document.getElementById('p1_total').innerText=format(Math.round(avg1));
+// shares
+for(let i=0;i<groups;i++){
+let s0=R0?r0[i]/R0*100:0;
+let s1=R1?r1[i]/R1*100:0;
+let ds=s1-s0;
 
-document.getElementById('R0').innerText=format(totalR0);
-document.getElementById('R1').innerText=format(totalR1);
-document.getElementById('dr').innerText=format(totalR1-totalR0);
+document.getElementById(`s0_${i}`).innerText=s0.toFixed(1)+"%";
+document.getElementById(`s1_${i}`).innerText=s1.toFixed(1)+"%";
+document.getElementById(`ds_${i}`).innerHTML=
+`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
+}
+
+// impact
+let out="";
+for(let i=0;i<groups;i++){
+
+let delta=r1[i]-r0[i];
+let pct=R0?delta/R0*100:0;
+
+if(mode==="money") out+=`Group ${i+1}: ${format(delta)}<br>`;
+if(mode==="percent") out+=`Group ${i+1}: ${pct.toFixed(1)}%<br>`;
+if(mode==="share"){
+let s0=r0[i]/R0*100||0;
+let s1=r1[i]/R1*100||0;
+out+=`Group ${i+1}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
+}
+}
+
+impact.innerHTML=out;
 
 }
 
-document.addEventListener('input',calc);
-document.addEventListener('change',calc);
+function setMode(m){
+mode=m;
+calc();
+}
 
-// init
-fillPeriodSelectors();
+function addEnterNav(){
+let inputs=document.querySelectorAll("input");
+inputs.forEach((el,i)=>{
+el.addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+e.preventDefault();
+inputs[i+1]?.focus();
+}});
+});
+}
+
+function fillTest(){
+for(let i=0;i<groups;i++){
+document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
+document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
+}
+calc();
+}
+
+document.addEventListener("input",calc);
+document.addEventListener("change",calc);
+
+fillSelectors();
 build();
 
 </script>
