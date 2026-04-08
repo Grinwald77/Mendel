@@ -373,12 +373,25 @@ calc();
 }
 
 function fillTest(){
-for(let i=0;i<groups;i++){
-document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
-document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
-}
+
+let rows = document.querySelectorAll('[id^="q0_"]');
+
+rows.forEach((_,i)=>{
+
+let q0 = document.getElementById(`q0_${i}`);
+let q1 = document.getElementById(`q1_${i}`);
+let p0 = document.getElementById(`p0_${i}`);
+let p1 = document.getElementById(`p1_${i}`);
+
+if(!q0 || !q1 || !p0 || !p1) return;
+
+q0.value = Math.floor(Math.random()*10)+1;
+q1.value = Math.floor(Math.random()*10)+1;
+p0.value = Math.floor(Math.random()*20000)+1000;
+p1.value = Math.floor(Math.random()*20000)+1000;
+
+});
+
 calc();
 }
 
