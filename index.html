@@ -41,22 +41,43 @@ button {
     padding:15px;
     border-radius:12px;
 }
-    .build-btn {
+/* 🔥 Главная кнопка */
+.build-btn {
     background: linear-gradient(135deg, #4facfe, #00f2fe);
     color: white;
-    font-weight: bold;
-    padding: 10px 18px;
+    font-weight: 700;
+    padding: 12px 22px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.build-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.build-btn:active {
+    transform: scale(0.96);
+}
+
+/* 🧊 Второстепенная кнопка */
+.test-btn {
+    background: #eef2ff;
+    color: #555;
+    padding: 10px 16px;
     border-radius: 10px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.build-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.test-btn:hover {
+    background: #e0e6ff;
 }
 
-.build-btn:active {
+.test-btn:active {
     transform: scale(0.97);
 }
 </style>
@@ -103,7 +124,7 @@ Current Period<br>
 <div>
 <br>
 <button onclick="build()" class="build-btn">Build The Model NOW</button>
-<button onclick="fillTest()">Test</button>
+<button onclick="fillTest()" class="test-btn">Test</button>
 </div>
 
 </div>
@@ -114,7 +135,7 @@ Current Period<br>
 
 <br>
 
-<button onclick="togglePanel()">Revenue analysis</button>
+<button onclick="togglePanel()" class="build-btn">Revenue Analysis</button>
 
 <div class="panel" id="panel">
 
