@@ -116,6 +116,9 @@ Current Period<br>
 
 <script>
 
+// ==============================
+// FACTOR MODEL
+// ==============================
 const FactorModel = {
     revenue(q,p){ return q*p; },
     decompose(q0,q1,p0,p1){
@@ -127,6 +130,10 @@ const FactorModel = {
     delta(r0,r1){ return r1-r0; },
     percent(delta,total){ return total?delta/total*100:0; }
 };
+
+// ==============================
+// APP
+// ==============================
 
 let groups=5;
 let mode="money";
@@ -216,6 +223,8 @@ html+=`</table>`;
 tableContainer.innerHTML=html;
 
 updateHeaders();
+addEnterNav();
+addPasteSupport();
 calc();
 }
 
@@ -247,7 +256,7 @@ updateHeaders();
 label0.innerText = `${period0.value} (${type0.value})`;
 label1.innerText = `${period1.value} (${type1.value})`;
 
-let R0=0,R1=0;
+let Q0=0,Q1=0,R0=0,R1=0;
 let r0=[],r1=[];
 let qEffect=0,pEffect=0;
 
@@ -261,8 +270,8 @@ let p1=+document.getElementById(`p1_${i}`).value||0;
 r0[i]=FactorModel.revenue(q0,p0);
 r1[i]=FactorModel.revenue(q1,p1);
 
-R0+=r0[i];
-R1+=r1[i];
+Q0+=q0; Q1+=q1;
+R0+=r0[i]; R1+=r1[i];
 
 let e=FactorModel.decompose(q0,q1,p0,p1);
 qEffect+=e.quantity;
@@ -277,15 +286,20 @@ document.getElementById(`dr_${i}`).innerHTML=`<span class="${delta>=0?"green":"r
 
 let dR=R1-R0;
 
+q0_total.innerText=format(Q0);
+q1_total.innerText=format(Q1);
 r0_total.innerText=format(R0);
 r1_total.innerText=format(R1);
 dr_total.innerText=format(dR);
+
+p0_total.innerText=Q0?format(R0/Q0):0;
+p1_total.innerText=Q1?format(R1/Q1):0;
 
 R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
 dr.innerText=format(dR);
 
-// ✅ FIX: SHARE BLOCK
+// SHARE
 for(let i=0;i<groups;i++){
 let s0 = R0 ? r0[i]/R0*100 : 0;
 let s1 = R1 ? r1[i]/R1*100 : 0;
@@ -297,6 +311,7 @@ document.getElementById(`ds_${i}`).innerHTML =
 `<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
+// IMPACT
 let out="";
 for(let i=0;i<groups;i++){
 let name=document.getElementById(`g_${i}`).value;
@@ -307,11 +322,64 @@ if(mode==="percent") out+=`${name}: ${FactorModel.percent(delta,dR).toFixed(1)}%
 }
 impact.innerHTML=out;
 
+// FACTORS
 factors.innerHTML=`
 <b>Revenue Factor Analysis:</b><br>
 Quantity: ${format(qEffect)} (${FactorModel.percent(qEffect,dR).toFixed(1)}%)<br>
 Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
 `;
+}
+
+// HELPERS
+
+function addEnterNav(){
+document.querySelectorAll("input").forEach((el,i,arr)=>{
+el.onkeydown=e=>{
+if(e.key==="Enter"){
+e.preventDefault();
+arr[i+1]?.focus();
+}
+};
+});
+}
+
+function addPasteSupport(){
+document.querySelectorAll("input").forEach(input=>{
+input.addEventListener("paste",function(e){
+
+let text=e.clipboardData.getData("text");
+if(!text.includes("\n")) return;
+
+e.preventDefault();
+
+let rows=text.trim().split("\n");
+
+rows.forEach((row,i)=>{
+if(i>=groups) return;
+
+let c=row.split(/\t/);
+if(c.length<5) return;
+
+document.getElementById(`g_${i}`).value=c[0];
+document.getElementById(`q0_${i}`).value=c[1];
+document.getElementById(`q1_${i}`).value=c[2];
+document.getElementById(`p0_${i}`).value=c[3];
+document.getElementById(`p1_${i}`).value=c[4];
+});
+
+calc();
+});
+});
+}
+
+function fillTest(){
+for(let i=0;i<groups;i++){
+document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
+document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
+}
+calc();
 }
 
 function format(n){ return Math.round(n).toLocaleString('en-US'); }
