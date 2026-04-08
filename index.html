@@ -49,6 +49,7 @@ button {
 
 <h2>Revenue Factor Analysis</h2>
 
+<!-- ✅ ВЕРХНИЙ БЛОК ВОССТАНОВЛЕН -->
 <div class="top-bar">
 
 <div>Groups<br><input id="groupCount" value="5"></div>
@@ -67,9 +68,9 @@ Period Type<br>
 Source Period<br>
 <select id="period0"></select>
 <select id="type0">
-<option value="Past">Past</option>
-<option value="Actual">Actual</option>
-<option value="Planned">Planned</option>
+<option value="Past">Past (Completed Period)</option>
+<option value="Actual">Actual (Current Analysis)</option>
+<option value="Planned">Planned (Future)</option>
 </select>
 </div>
 
@@ -77,9 +78,9 @@ Source Period<br>
 Current Period<br>
 <select id="period1"></select>
 <select id="type1">
-<option value="Past">Past</option>
-<option value="Actual">Actual</option>
-<option value="Planned">Planned</option>
+<option value="Past">Past (Completed Period)</option>
+<option value="Actual">Actual (Current Analysis)</option>
+<option value="Planned">Planned (Future)</option>
 </select>
 </div>
 
@@ -122,29 +123,29 @@ Current Period<br>
 const FactorModel = {
 
     revenue(q,p){
-        return q * p;
+        return q*p;
     },
 
     decompose(q0,q1,p0,p1){
         return {
-            quantity: (q1 - q0) * p0,
-            price: q1 * (p1 - p0)
+            quantity:(q1-q0)*p0,
+            price:q1*(p1-p0)
         };
     },
 
     delta(r0,r1){
-        return r1 - r0;
+        return r1-r0;
     },
 
     percent(delta,total){
-        return total ? delta / total * 100 : 0;
+        return total?delta/total*100:0;
     }
 
 };
 
 
 // ==============================
-// APP LOGIC
+// APP
 // ==============================
 
 let groups=5;
@@ -235,8 +236,6 @@ html+=`</table>`;
 tableContainer.innerHTML=html;
 
 updateHeaders();
-addEnterNav();
-addPasteSupport();
 calc();
 }
 
@@ -267,8 +266,8 @@ updateHeaders();
 
 label0.innerText = `${period0.value} (${type0.value})`;
 label1.innerText = `${period1.value} (${type1.value})`;
-    
-let Q0=0,Q1=0,R0=0,R1=0;
+
+let R0=0,R1=0;
 let r0=[],r1=[];
 let qEffect=0,pEffect=0;
 
@@ -282,50 +281,30 @@ let p1=+document.getElementById(`p1_${i}`).value||0;
 r0[i]=FactorModel.revenue(q0,p0);
 r1[i]=FactorModel.revenue(q1,p1);
 
-Q0+=q0; Q1+=q1;
-R0+=r0[i]; R1+=r1[i];
+R0+=r0[i];
+R1+=r1[i];
 
-let e = FactorModel.decompose(q0,q1,p0,p1);
-qEffect += e.quantity;
-pEffect += e.price;
+let e=FactorModel.decompose(q0,q1,p0,p1);
+qEffect+=e.quantity;
+pEffect+=e.price;
 
 let delta=FactorModel.delta(r0[i],r1[i]);
 
 document.getElementById(`r0_${i}`).innerText=format(r0[i]);
 document.getElementById(`r1_${i}`).innerText=format(r1[i]);
-document.getElementById(`dr_${i}`).innerHTML =
-`<span class="${delta>=0?"green":"red"}">${format(delta)}</span>`;
+document.getElementById(`dr_${i}`).innerHTML=`<span class="${delta>=0?"green":"red"}">${format(delta)}</span>`;
 }
 
 let dR=R1-R0;
+
+r0_total.innerText=format(R0);
+r1_total.innerText=format(R1);
+dr_total.innerText=format(dR);
 
 R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
 dr.innerText=format(dR);
 
-// totals
-q0_total.innerText=format(Q0);
-q1_total.innerText=format(Q1);
-r0_total.innerText=format(R0);
-r1_total.innerText=format(R1);
-dr_total.innerText=format(dR);
-
-p0_total.innerText=Q0?format(R0/Q0):0;
-p1_total.innerText=Q1?format(R1/Q1):0;
-
-// shares
-for(let i=0;i<groups;i++){
-let s0=R0?r0[i]/R0*100:0;
-let s1=R1?r1[i]/R1*100:0;
-let ds=s1-s0;
-
-document.getElementById(`s0_${i}`).innerText=s0.toFixed(1)+"%";
-document.getElementById(`s1_${i}`).innerText=s1.toFixed(1)+"%";
-document.getElementById(`ds_${i}`).innerHTML=
-`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
-}
-
-// вклад
 let out="";
 for(let i=0;i<groups;i++){
 let name=document.getElementById(`g_${i}`).value;
@@ -333,21 +312,14 @@ let delta=FactorModel.delta(r0[i],r1[i]);
 
 if(mode==="money") out+=`${name}: ${format(delta)}<br>`;
 if(mode==="percent") out+=`${name}: ${FactorModel.percent(delta,dR).toFixed(1)}%<br>`;
-if(mode==="share"){
-let s0=r0[i]/R0*100||0;
-let s1=r1[i]/R1*100||0;
-out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
-}
 }
 impact.innerHTML=out;
 
-// ✅ ТОЛЬКО 2 ФАКТОРА
 factors.innerHTML=`
 <b>Revenue Factor Analysis:</b><br>
-Quantity effect: ${format(qEffect)}<br>
-Price effect: ${format(pEffect)}
+Quantity: ${format(qEffect)} (${FactorModel.percent(qEffect,dR).toFixed(1)}%)<br>
+Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
 `;
-
 }
 
 function format(n){ return Math.round(n).toLocaleString('en-US'); }
@@ -356,55 +328,8 @@ function togglePanel(){
 panel.style.display = panel.style.display==="block"?"none":"block";
 }
 
-function addEnterNav(){
-document.querySelectorAll("input").forEach((el,i,arr)=>{
-el.onkeydown=e=>{
-if(e.key==="Enter"){e.preventDefault();arr[i+1]?.focus();}
-};
-});
-}
-
-function addPasteSupport(){
-document.querySelectorAll("input").forEach(input=>{
-input.addEventListener("paste",function(e){
-
-let text=e.clipboardData.getData("text");
-if(!text.includes("\n")) return;
-
-e.preventDefault();
-
-let rows=text.trim().split("\n");
-
-rows.forEach((row,i)=>{
-if(i>=groups) return;
-
-let c=row.split(/\t/);
-if(c.length<5) return;
-
-document.getElementById(`g_${i}`).value=c[0];
-document.getElementById(`q0_${i}`).value=c[1];
-document.getElementById(`q1_${i}`).value=c[2];
-document.getElementById(`p0_${i}`).value=c[3];
-document.getElementById(`p1_${i}`).value=c[4];
-});
-
-calc();
-});
-});
-}
-
-function fillTest(){
-for(let i=0;i<groups;i++){
-document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
-document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
-document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
-}
-calc();
-}
-
 document.addEventListener("input",calc);
-document.addEventListener("change",()=>{updateHeaders(); calc();});
+document.addEventListener("change",calc);
 
 fillSelectors();
 build();
