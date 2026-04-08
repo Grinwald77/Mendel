@@ -288,7 +288,32 @@ document.addEventListener("change",calc);
 
 fillSelectors();
 build();
+function rand(min,max){
+    return Math.floor(Math.random()*(max-min+1))+min;
+}
 
+function fillTest(){
+
+for(let i=0;i<groups;i++){
+
+    let q0 = rand(1,10);
+    let p0 = rand(1000,20000);
+
+    let growthQ = rand(-10,30)/100;
+    let growthP = rand(-10,30)/100;
+
+    let q1 = Math.max(1, Math.round(q0 * (1 + growthQ)));
+    let p1 = Math.max(500, Math.round(p0 * (1 + growthP)));
+
+    document.getElementById(`q0_${i}`).value = q0;
+    document.getElementById(`p0_${i}`).value = p0;
+    document.getElementById(`q1_${i}`).value = q1;
+    document.getElementById(`p1_${i}`).value = p1;
+}
+
+calc();
+}
+    
 </script>
 
 </body>
