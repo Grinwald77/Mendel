@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis v.1. Best Ever </title>
+<title>Revenue Factor Analysis</title>
 
 <style>
 body {
@@ -10,7 +10,6 @@ body {
     background:#f4f6fa;
     margin:0;
     padding:15px;
-    padding-bottom:120px;
 }
 
 input, select {
@@ -20,9 +19,7 @@ input, select {
     border:1px solid #ddd;
 }
 
-.group-name {
-    width:160px;
-}
+.group-name { width:160px; }
 
 table {
     width:100%;
@@ -30,42 +27,19 @@ table {
     border-radius:12px;
 }
 
-td,th { 
-    padding:8px; 
-    text-align:center; 
-}
-
-th {
-    white-space: pre-line;
-}
+td,th { padding:8px; text-align:center; }
+th { white-space: pre-line; }
 
 .total {
     background:#eef2ff;
     font-weight:bold;
 }
 
-/* 🔥 DRAG PANEL */
-.panel {
-    position:fixed;
-    left:50%;
-    transform:translateX(-50%);
-    bottom:20px;
-    width:90%;
-    max-width:900px;
-    background:white;
-    padding:15px;
-    border-radius:12px;
-    box-shadow:0 6px 20px rgba(0,0,0,0.15);
-}
-
-.panel-header {
-    font-weight:bold;
-    margin-bottom:10px;
-    cursor:grab;
-}
-
-.panel.dragging .panel-header {
-    cursor:grabbing;
+.top-bar {
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    align-items:center;
 }
 
 button {
@@ -80,6 +54,16 @@ button {
 
 .green { color:green; }
 .red { color:red; }
+
+/* аналитика */
+.panel {
+    display:none;
+    margin-top:15px;
+    background:white;
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.1);
+}
 </style>
 </head>
 
@@ -87,15 +71,22 @@ button {
 
 <h2>Revenue Factor Analysis</h2>
 
+<div class="top-bar">
+
 <div>
-Number of Groups:
+Groups:
 <input id="groupCount" value="5">
 <button onclick="build()">Build</button>
 </div>
 
-<br>
+<div>
+Period Type:<br>
+<label><input type="radio" name="ptype" value="months" checked onchange="fillSelectors()"> Months</label>
+<label><input type="radio" name="ptype" value="weeks" onchange="fillSelectors()"> Weeks</label>
+<label><input type="radio" name="ptype" value="quarters" onchange="fillSelectors()"> Quarters</label>
+<label><input type="radio" name="ptype" value="years" onchange="fillSelectors()"> Years</label>
+</div>
 
-<div style="display:flex; gap:20px;">
 <div>
 <b>Period 1</b><br>
 <select id="period0"></select>
@@ -113,15 +104,18 @@ Number of Groups:
 <option>Planned</option>
 </select>
 </div>
+
 </div>
 
 <br>
 
 <div id="tableContainer"></div>
 
-<div class="panel" id="panel">
+<br>
 
-<div class="panel-header" id="panelHeader">⬍ Drag panel</div>
+<button onclick="togglePanel()">Analytical Insights</button>
+
+<div class="panel" id="panel">
 
 <div><b id="label0"></b>: <span id="R0_span"></span></div>
 <div><b id="label1"></b>: <span id="R1_span"></span></div>
@@ -141,14 +135,43 @@ Number of Groups:
 let groups=5;
 let mode="money";
 
+function getPeriodType(){
+return document.querySelector('input[name="ptype"]:checked').value;
+}
+
 function generatePeriods(){
+
+let type=getPeriodType();
+let list=[];
+
+if(type==="months"){
 const months=["Jan.","Feb.","Mar.","Apr.","May","Jun.",
 "Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
-let list=[];
+
 for(let y=2025;y<=2026;y++){
 for(let m=0;m<12;m++){
 list.push(months[m]+" "+y);
 }}
+}
+
+if(type==="weeks"){
+for(let y=2025;y<=2026;y++){
+for(let w=1;w<=52;w++){
+list.push("W"+w+" "+y);
+}}
+}
+
+if(type==="quarters"){
+for(let y=2025;y<=2026;y++){
+for(let q=1;q<=4;q++){
+list.push("Q"+q+" "+y);
+}}
+}
+
+if(type==="years"){
+list=["2025","2026"];
+}
+
 return list;
 }
 
@@ -159,6 +182,7 @@ list.forEach(p=>html+=`<option>${p}</option>`);
 period0.innerHTML=html;
 period1.innerHTML=html;
 period1.selectedIndex=1;
+updateHeaders();
 }
 
 function build(){
@@ -181,13 +205,10 @@ let html=`<table>
 <tr>
 <th id="h_q0"></th>
 <th id="h_q1"></th>
-
 <th id="h_p0"></th>
 <th id="h_p1"></th>
-
 <th id="h_r0"></th>
 <th id="h_r1"></th>
-
 <th id="h_s0"></th>
 <th id="h_s1"></th>
 </tr>
@@ -196,16 +217,12 @@ let html=`<table>
 for(let i=0;i<groups;i++){
 html+=`<tr>
 <td><input class="group-name" id="g_${i}" value="Group ${i+1}"></td>
-
 <td><input id="q0_${i}"></td>
 <td><input id="q1_${i}"></td>
-
 <td><input id="p0_${i}"></td>
 <td><input id="p1_${i}"></td>
-
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
-
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
@@ -238,13 +255,10 @@ let p1 = `${period1.value} (${type1.value})`;
 
 h_q0.innerText = p0;
 h_q1.innerText = p1;
-
 h_p0.innerText = p0;
 h_p1.innerText = p1;
-
 h_r0.innerText = p0;
 h_r1.innerText = p1;
-
 h_s0.innerText = p0;
 h_s1.innerText = p1;
 }
@@ -254,6 +268,11 @@ mode=m;
 document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
 document.getElementById("btn_"+m).classList.add("active");
 calc();
+}
+
+function togglePanel(){
+let p=document.getElementById("panel");
+p.style.display = (p.style.display==="none"||!p.style.display) ? "block":"none";
 }
 
 function format(n){ return Math.round(n).toLocaleString('en-US'); }
@@ -274,7 +293,6 @@ for(let i=0;i<groups;i++){
 
 let q0=+document.getElementById(`q0_${i}`).value||0;
 let q1=+document.getElementById(`q1_${i}`).value||0;
-
 let p0=+document.getElementById(`p0_${i}`).value||0;
 let p1=+document.getElementById(`p1_${i}`).value||0;
 
@@ -375,7 +393,6 @@ document.getElementById(`p1_${i}`).value=rand(1000,20000);
 calc();
 }
 
-// enter nav
 function addEnterNav(){
 let inputs=document.querySelectorAll("input");
 inputs.forEach((el,i)=>{
@@ -386,36 +403,6 @@ inputs[i+1]?.focus();
 }});
 });
 }
-
-// 🔥 DRAG PANEL
-let panel=document.getElementById("panel");
-let header=document.getElementById("panelHeader");
-
-let isDragging=false;
-let offsetY=0;
-
-header.addEventListener("mousedown",e=>{
-isDragging=true;
-offsetY=e.clientY - panel.getBoundingClientRect().top;
-panel.classList.add("dragging");
-});
-
-document.addEventListener("mousemove",e=>{
-if(!isDragging) return;
-
-let y=e.clientY - offsetY;
-
-let maxY=window.innerHeight - panel.offsetHeight;
-y=Math.max(0,Math.min(maxY,y));
-
-panel.style.top=y+"px";
-panel.style.bottom="auto";
-});
-
-document.addEventListener("mouseup",()=>{
-isDragging=false;
-panel.classList.remove("dragging");
-});
 
 groupCount.addEventListener("keydown",e=>{
 if(e.key==="Enter"){ e.preventDefault(); build(); }
