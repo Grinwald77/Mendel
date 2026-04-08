@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.3 23:11 / Apr.08, 2026</title>
+<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.4 23:31 / Apr.08, 2026</title>
 
 <style>
 body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
@@ -127,10 +127,6 @@ const FactorModel = {
     percent(delta,total){ return total?delta/total*100:0; }
 };
 
-// ==============================
-// APP
-// ==============================
-
 let groups=5;
 
 function generatePeriods(){
@@ -197,15 +193,15 @@ html+=`<tr>
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
 <td id="dr_${i}"></td>
+<td id="impact_${i}"></td>
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
-<td id="impact_${i}"></td>
 </tr>`;
 }
 
 html+=`<tr class="total">
-<td><b>Total Quantity and Revenue</b></td>
+<td><b>Total</b></td>
 <td></td><td></td><td></td><td></td>
 <td id="r0_total"></td>
 <td id="r1_total"></td>
@@ -296,48 +292,47 @@ document.getElementById(`ds_${i}`).innerHTML =
 document.getElementById(`impact_${i}`).innerText = impact.toFixed(1)+"%";
 }
 
-// FACTORS + DETAILS
-let qDetails = "";
-let pDetails = "";
-
-for(let i=0;i<groups;i++){
-let name=document.getElementById(`g_${i}`).value;
-
-let q0=+document.getElementById(`q0_${i}`).value||0;
-let q1=+document.getElementById(`q1_${i}`).value||0;
-let p0=+document.getElementById(`p0_${i}`).value||0;
-let p1=+document.getElementById(`p1_${i}`).value||0;
-
-let e=FactorModel.decompose(q0,q1,p0,p1);
-
-qDetails += `${name}: ${format(e.quantity)} (${FactorModel.percent(e.quantity,dR).toFixed(1)}%)<br>`;
-pDetails += `${name}: ${format(e.price)} (${FactorModel.percent(e.price,dR).toFixed(1)}%)<br>`;
-}
-
+// FACTORS
 factors.innerHTML=`
 <b>Revenue Factor Analysis:</b><br>
 Quantity: ${format(qEffect)} (${FactorModel.percent(qEffect,dR).toFixed(1)}%)<br>
 Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
-
-<br><br>
-<b>By Groups:</b><br>
-<u>Quantity:</u><br>${qDetails}
-<br>
-<u>Price:</u><br>${pDetails}
 `;
 }
 
-// HELPERS
-
+// 🔥 НОВАЯ НАВИГАЦИЯ (ГЛАВНОЕ ИЗМЕНЕНИЕ)
 function addEnterNav(){
-document.querySelectorAll("input").forEach((el,i,arr)=>{
-el.onkeydown=e=>{
-if(e.key==="Enter"){
+
+const elements = document.querySelectorAll("input, select");
+
+elements.forEach((el,i)=>{
+
+el.addEventListener("keydown", e=>{
+
+if(el.tagName==="INPUT" && e.key==="Enter"){
 e.preventDefault();
-arr[i+1]?.focus();
+elements[i+1]?.focus();
 }
-};
+
+if(el.tagName==="SELECT" && e.key==="Enter"){
+
+if(el.dataset.open==="true"){
+el.dataset.open="false";
+return;
+}
+
+e.preventDefault();
+elements[i+1]?.focus();
+}
+
+if(el.tagName==="SELECT" && (e.key==="ArrowDown" || e.key==="ArrowUp")){
+el.dataset.open="true";
+}
+
 });
+
+});
+
 }
 
 function addPasteSupport(){
@@ -387,6 +382,7 @@ document.addEventListener("change",calc);
 
 fillSelectors();
 build();
+addEnterNav();
 
 </script>
 
