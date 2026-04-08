@@ -30,7 +30,14 @@ table {
     border-radius:12px;
 }
 
-td,th { padding:8px; text-align:center; }
+td,th { 
+    padding:8px; 
+    text-align:center; 
+}
+
+th {
+    white-space: pre-line;
+}
 
 .total {
     background:#eef2ff;
@@ -157,10 +164,7 @@ let html=`<table>
 </tr>
 
 <tr>
-<th>Quantity</th>
-<th>Average Price</th>
-<th>Quantity</th>
-<th>Average Price</th>
+<th></th><th></th><th></th><th></th>
 </tr>
 `;
 
@@ -195,7 +199,7 @@ tableContainer.innerHTML=html;
 
 addEnterNav();
 addPasteSupport();
-updateHeaders(); // 🔥 ВАЖНО
+updateHeaders();
 calc();
 
 document.getElementById('q0_0')?.focus();
@@ -209,13 +213,20 @@ let p1 = `${period1.value} (${type1.value})`;
 document.getElementById("h_period0").innerText = p0;
 document.getElementById("h_period1").innerText = p1;
 
-document.getElementById("h_r0").innerText = `Revenue ${p0}`;
-document.getElementById("h_r1").innerText = `Revenue ${p1}`;
+let headers = document.querySelectorAll("table tr:nth-child(2) th");
 
-document.getElementById("h_s0").innerText = `Share ${p0}`;
-document.getElementById("h_s1").innerText = `Share ${p1}`;
+headers[0].innerText = `Quantity\n${p0}`;
+headers[1].innerText = `Average Price\n${p0}`;
+headers[2].innerText = `Quantity\n${p1}`;
+headers[3].innerText = `Average Price\n${p1}`;
+
+document.getElementById("h_r0").innerText = `Revenue\n${p0}`;
+document.getElementById("h_r1").innerText = `Revenue\n${p1}`;
+
+document.getElementById("h_s0").innerText = `Share\n${p0}`;
+document.getElementById("h_s1").innerText = `Share\n${p1}`;
 }
-    
+
 function setMode(m){
 mode=m;
 document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
