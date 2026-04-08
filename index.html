@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis (Quantity * Av.Price) V.2. 22:44 / Apr.08, 2026</title>
+<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.1 22:48 / Apr.08, 2026</title>
 
 <style>
 body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
@@ -67,9 +67,9 @@ Period Type<br>
 Source Period<br>
 <select id="period0"></select>
 <select id="type0">
-<option value="Past">Past (Completed Period)</option>
-<option value="Actual">Actual (Current Analysis)</option>
-<option value="Planned">Planned (Future)</option>
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
 </select>
 </div>
 
@@ -77,9 +77,9 @@ Source Period<br>
 Current Period<br>
 <select id="period1"></select>
 <select id="type1">
-<option value="Past">Past (Completed Period)</option>
-<option value="Actual">Actual (Current Analysis)</option>
-<option value="Planned">Planned (Future)</option>
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
 </select>
 </div>
 
@@ -116,9 +116,7 @@ Current Period<br>
 
 <script>
 
-// ==============================
 // FACTOR MODEL
-// ==============================
 const FactorModel = {
     revenue(q,p){ return q*p; },
     decompose(q0,q1,p0,p1){
@@ -130,10 +128,6 @@ const FactorModel = {
     delta(r0,r1){ return r1-r0; },
     percent(delta,total){ return total?delta/total*100:0; }
 };
-
-// ==============================
-// APP
-// ==============================
 
 let groups=5;
 let mode="money";
@@ -174,7 +168,7 @@ let html=`<table>
 <th rowspan="2">Product Group</th>
 <th colspan="2">Quantity</th>
 <th colspan="2">Average Price</th>
-<th colspan="3">Revenue</th>
+<th colspan="4">Revenue</th>
 <th colspan="3">Share</th>
 </tr>
 
@@ -186,6 +180,7 @@ let html=`<table>
 <th id="h_r0"></th>
 <th id="h_r1"></th>
 <th>Revenue Change</th>
+<th>Change Impact</th>
 <th id="h_s0"></th>
 <th id="h_s1"></th>
 <th>Share Change</th>
@@ -201,6 +196,7 @@ html+=`<tr>
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
 <td id="dr_${i}"></td>
+<td id="impact_${i}"></td>
 <td id="s0_${i}"></td>
 <td id="s1_${i}"></td>
 <td id="ds_${i}"></td>
@@ -208,7 +204,7 @@ html+=`<tr>
 }
 
 html+=`<tr class="total">
-<td><b>Total Quantity and Revenue</b></td>
+<td><b>Total</b></td>
 <td id="q0_total"></td>
 <td id="q1_total"></td>
 <td id="p0_total"></td>
@@ -216,6 +212,7 @@ html+=`<tr class="total">
 <td id="r0_total"></td>
 <td id="r1_total"></td>
 <td id="dr_total"></td>
+<td></td>
 <td></td><td></td><td></td>
 </tr>`;
 
@@ -286,6 +283,16 @@ document.getElementById(`dr_${i}`).innerHTML=`<span class="${delta>=0?"green":"r
 
 let dR=R1-R0;
 
+// 🔥 Change Impact
+for(let i=0;i<groups;i++){
+let delta=FactorModel.delta(r0[i],r1[i]);
+let pct=dR?delta/dR*100:0;
+
+document.getElementById(`impact_${i}`).innerHTML=
+`<span class="${pct>=0?"green":"red"}">${pct.toFixed(1)}%</span>`;
+}
+
+// totals
 q0_total.innerText=format(Q0);
 q1_total.innerText=format(Q1);
 r0_total.innerText=format(R0);
@@ -311,24 +318,19 @@ document.getElementById(`ds_${i}`).innerHTML =
 `<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
 }
 
-// IMPACT
+// IMPACT PANEL
 let out="";
 for(let i=0;i<groups;i++){
 let name=document.getElementById(`g_${i}`).value;
 let delta=FactorModel.delta(r0[i],r1[i]);
-if(mode==="money"){
-    out+=`${name}: ${format(delta)}<br>`;
-}
-if(mode==="percent"){
-    out+=`${name}: ${FactorModel.percent(delta,dR).toFixed(1)}%<br>`;
-}
+
+if(mode==="money") out+=`${name}: ${format(delta)}<br>`;
+if(mode==="percent") out+=`${name}: ${FactorModel.percent(delta,dR).toFixed(1)}%<br>`;
 if(mode==="share"){
-    let s0 = R0 ? r0[i]/R0*100 : 0;
-    let s1 = R1 ? r1[i]/R1*100 : 0;
-    let ds = s1 - s0;
-    out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}% (${ds.toFixed(1)} pp)<br>`;
+let s0=r0[i]/R0*100||0;
+let s1=r1[i]/R1*100||0;
+out+=`${name}: ${s0.toFixed(1)}% → ${s1.toFixed(1)}%<br>`;
 }
-    
 }
 impact.innerHTML=out;
 
@@ -340,15 +342,10 @@ Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
 `;
 }
 
-// HELPERS
-
 function addEnterNav(){
 document.querySelectorAll("input").forEach((el,i,arr)=>{
 el.onkeydown=e=>{
-if(e.key==="Enter"){
-e.preventDefault();
-arr[i+1]?.focus();
-}
+if(e.key==="Enter"){e.preventDefault();arr[i+1]?.focus();}
 };
 });
 }
@@ -356,52 +353,38 @@ arr[i+1]?.focus();
 function addPasteSupport(){
 document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
-
 let text=e.clipboardData.getData("text");
 if(!text.includes("\n")) return;
-
 e.preventDefault();
-
 let rows=text.trim().split("\n");
-
 rows.forEach((row,i)=>{
 if(i>=groups) return;
-
 let c=row.split(/\t/);
 if(c.length<5) return;
-
 document.getElementById(`g_${i}`).value=c[0];
 document.getElementById(`q0_${i}`).value=c[1];
 document.getElementById(`q1_${i}`).value=c[2];
 document.getElementById(`p0_${i}`).value=c[3];
 document.getElementById(`p1_${i}`).value=c[4];
 });
-
 calc();
 });
 });
 }
 
 function fillTest(){
-
 let rows = document.querySelectorAll('[id^="q0_"]');
-
 rows.forEach((_,i)=>{
-
 let q0 = document.getElementById(`q0_${i}`);
 let q1 = document.getElementById(`q1_${i}`);
 let p0 = document.getElementById(`p0_${i}`);
 let p1 = document.getElementById(`p1_${i}`);
-
 if(!q0 || !q1 || !p0 || !p1) return;
-
 q0.value = Math.floor(Math.random()*10)+1;
 q1.value = Math.floor(Math.random()*10)+1;
 p0.value = Math.floor(Math.random()*20000)+1000;
 p1.value = Math.floor(Math.random()*20000)+1000;
-
 });
-
 calc();
 }
 
