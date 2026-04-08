@@ -287,7 +287,9 @@ document.querySelectorAll("input").forEach(input=>{
 input.addEventListener("paste",function(e){
 
 let text=e.clipboardData.getData("text");
-if(!text.includes("\t")) return;
+
+// допускаем и табы и множественные пробелы
+if(!text.includes("\n")) return;
 
 e.preventDefault();
 
@@ -296,12 +298,27 @@ let rows=text.trim().split(/\n/);
 rows.forEach((row,i)=>{
 if(i>=groups) return;
 
-let cols=row.split("\t");
+// разбиваем: табы ИЛИ несколько пробелов
+let cols=row.trim().split(/\t|\s{2,}/);
 
-document.getElementById(`q0_${i}`).value=cols[0]||"";
-document.getElementById(`p0_${i}`).value=cols[1]||"";
-document.getElementById(`q1_${i}`).value=cols[2]||"";
-document.getElementById(`p1_${i}`).value=cols[3]||"";
+if(cols.length < 5) return;
+
+// 0 — имя группы
+let nameInput=document.getElementById(`g_${i}`);
+if(nameInput) nameInput.value=cols[0];
+
+// 1-4 — данные
+let ids=['q0_','p0_','q1_','p1_'];
+
+for(let j=0;j<4;j++){
+let val = cols[j+1] || "";
+
+let inputEl=document.getElementById(ids[j]+i);
+if(inputEl){
+inputEl.value = val.replace(',', '.');
+}
+}
+
 });
 
 calc();
@@ -309,7 +326,6 @@ calc();
 });
 });
 }
-
 // test
 function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
