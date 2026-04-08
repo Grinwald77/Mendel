@@ -141,18 +141,20 @@ period1.selectedIndex=1;
 
 function build(){
 
+function build(){
+
 groups=+groupCount.value||1;
 
 let html=`<table>
 
 <tr>
 <th rowspan="2">Product Group</th>
-<th colspan="2">Planned / Actual Period 1</th>
-<th colspan="2">Planned / Actual Period 2</th>
-<th rowspan="2">Revenue (Period 1)</th>
-<th rowspan="2">Revenue (Period 2)</th>
-<th rowspan="2">Share (Period 1)</th>
-<th rowspan="2">Share (Period 2)</th>
+<th colspan="2" id="h_period0"></th>
+<th colspan="2" id="h_period1"></th>
+<th rowspan="2" id="h_r0"></th>
+<th rowspan="2" id="h_r1"></th>
+<th rowspan="2" id="h_s0"></th>
+<th rowspan="2" id="h_s1"></th>
 <th rowspan="2">Δ Share</th>
 </tr>
 
@@ -195,6 +197,7 @@ tableContainer.innerHTML=html;
 
 addEnterNav();
 addPasteSupport();
+updateHeaders(); // 🔥 ВАЖНО
 calc();
 
 document.getElementById('q0_0')?.focus();
