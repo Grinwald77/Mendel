@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Revenue Factor Analysis (Quantity * Av.Price) + Direct Costs V.3.0 01:12 / Apr.09, 2026</title>
+<title>Revenue Factor Analysis (Quantity * Av.Price) V.2.4 23:31 / Apr.08, 2026</title>
 
 <style>
 body { font-family:-apple-system; background:#f4f6fa; padding:15px; }
@@ -18,30 +18,17 @@ input, select {
 
 table { width:100%; background:white; border-radius:12px; }
 td,th { padding:8px; text-align:center; }
+th { white-space:pre-line; }
 
 .total { background:#eef2ff; font-weight:bold; }
 
 .top-bar { display:flex; gap:15px; flex-wrap:wrap; }
 
 button {
+    padding:6px 12px;
     border:none;
-    border-radius:10px;
-    cursor:pointer;
-}
-
-.build-btn {
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
-    color:white;
-    font-weight:700;
-    padding:12px 22px;
-}
-
-.test-btn {
-    background:white;
-    border:2px solid #d6dcff;
-    font-weight:700;
-    padding:10px 16px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+    border-radius:8px;
+    background:#e0e6ff;
 }
 
 .green { color:green; }
@@ -54,6 +41,69 @@ button {
     padding:15px;
     border-radius:12px;
 }
+/* 🔥 Главная кнопка */
+.build-btn {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+    font-weight: 700;
+    padding: 12px 22px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.build-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.build-btn:active {
+    transform: scale(0.96);
+}
+
+/* 🧊 Второстепенная кнопка */
+.test-btn {
+    background: white;
+    color: #333;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 2px solid #d6dcff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.test-btn:hover {
+    background: #f5f7ff;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
+.test-btn:active {
+    transform: scale(0.97);
+}
+    /* tooltip */
+.paste-hint {
+    position: absolute;
+    background: #111;
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    width: 260px;
+    line-height: 1.4;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.2s;
+    z-index: 999;
+}
+
+.paste-hint.show {
+    opacity: 1;
+}
 </style>
 </head>
 
@@ -62,14 +112,48 @@ button {
 <h2>Revenue Factor Analysis</h2>
 
 <div class="top-bar">
+
 <div>Groups<br><input id="groupCount" value="5"></div>
+
+<div>
+Period Type<br>
+<select id="periodType" onchange="fillSelectors()">
+<option value="months">Months</option>
+<option value="weeks">Weeks</option>
+<option value="quarters">Quarters</option>
+<option value="years">Years</option>
+</select>
+</div>
+
+<div>
+Source Period<br>
+<select id="period0"></select>
+<select id="type0">
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
+</select>
+</div>
+
+<div>
+Current Period<br>
+<select id="period1"></select>
+<select id="type1">
+<option value="Past">Past</option>
+<option value="Actual">Actual</option>
+<option value="Planned">Planned</option>
+</select>
+</div>
 
 <div>
 <br>
 <button onclick="build()" class="build-btn">Build The Model NOW</button>
 <button onclick="fillTest()" class="test-btn">Test</button>
 </div>
+
 </div>
+
+<br>
 
 <div id="tableContainer"></div>
 
@@ -78,191 +162,308 @@ button {
 <button onclick="togglePanel()" class="build-btn">Revenue Analysis</button>
 
 <div class="panel" id="panel">
-<div><b>Total Revenue:</b> <span id="R1_span"></span></div>
+
+<div><b id="label0"></b>: <span id="R0_span"></span></div>
+<div><b id="label1"></b>: <span id="R1_span"></span></div>
 <div><b>Revenue Change:</b> <span id="dr"></span></div>
+
+<hr>
+
+<div id="factors"></div>
+
 </div>
-
-<!-- ================= COST BLOCK ================= -->
-
-<h2 style="margin-top:30px;">Direct Costs</h2>
-
-<div class="top-bar">
-<div>
-<br>
-<button onclick="buildCost()" class="build-btn">Build Costs</button>
-<button onclick="fillTestCost()" class="test-btn">Test</button>
-</div>
-</div>
-
-<div id="costTableContainer"></div>
-
-<!-- ================= MARGIN ================= -->
-
-<h2 style="margin-top:30px;">Marginal Profit</h2>
-
-<table>
-<tr>
-<th>Revenue</th>
-<th>Costs</th>
-<th>Margin</th>
-</tr>
-<tr class="total">
-<td id="rev_total"></td>
-<td id="cost_total"></td>
-<td id="margin_total"></td>
-</tr>
-</table>
 
 <script>
 
+// ==============================
+// FACTOR MODEL
+// ==============================
+const FactorModel = {
+    revenue(q,p){ return q*p; },
+    decompose(q0,q1,p0,p1){
+        return {
+            quantity:(q1-q0)*p0,
+            price:q1*(p1-p0)
+        };
+    },
+    delta(r0,r1){ return r1-r0; },
+    percent(delta,total){ return total?delta/total*100:0; }
+};
+
 let groups=5;
 
-// ================= REVENUE =================
+function generatePeriods(){
+let t=periodType.value;
+let list=[];
+
+if(t==="months"){
+let m=["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
+for(let y=2025;y<=2026;y++) for(let i=0;i<12;i++) list.push(m[i]+" "+y);
+}
+if(t==="weeks"){
+for(let y=2025;y<=2026;y++) for(let i=1;i<=52;i++) list.push("W"+i+" "+y);
+}
+if(t==="quarters"){
+for(let y=2025;y<=2026;y++) for(let i=1;i<=4;i++) list.push("Q"+i+" "+y);
+}
+if(t==="years") list=["2025","2026"];
+
+return list;
+}
+
+function fillSelectors(){
+let list=generatePeriods();
+let html=list.map(x=>`<option>${x}</option>`).join("");
+period0.innerHTML=html;
+period1.innerHTML=html;
+period1.selectedIndex=1;
+}
+
 function build(){
 
 groups=+groupCount.value||1;
 
 let html=`<table>
 <tr>
-<th>Group</th>
-<th>Q0</th><th>Q1</th>
-<th>P0</th><th>P1</th>
-<th>R0</th><th>R1</th>
+<th rowspan="2">Product Group</th>
+<th colspan="2">Quantity</th>
+<th colspan="2">Average Price</th>
+<th colspan="4">Revenue</th>
+<th colspan="3">Share</th>
+</tr>
+
+<tr>
+<th id="h_q0"></th>
+<th id="h_q1"></th>
+<th id="h_p0"></th>
+<th id="h_p1"></th>
+<th id="h_r0"></th>
+<th id="h_r1"></th>
+<th>Revenue Change</th>
+<th>Impact</th>
+<th id="h_s0"></th>
+<th id="h_s1"></th>
+<th>Share Change</th>
 </tr>`;
 
 for(let i=0;i<groups;i++){
 html+=`<tr>
-<td><input id="g_${i}" value="Group ${i+1}"></td>
+
+<td style="position:relative;">
+<input class="group-name" id="g_${i}" value="Group ${i+1}">
+
+${i===0 ? `<div class="paste-hint" id="pasteHint">
+You can paste full table here (Ctrl+V)<br><br>
+Format:<br>
+Group | Q0 | Q1 | P0 | P1<br><br>
+Only numbers:<br>
+1 / 1.5 / 25000 / 25001.5<br><br>
+Rows must match number of groups
+</div>` : ``}
+
+</td>
+
 <td><input id="q0_${i}"></td>
 <td><input id="q1_${i}"></td>
 <td><input id="p0_${i}"></td>
 <td><input id="p1_${i}"></td>
 <td id="r0_${i}"></td>
 <td id="r1_${i}"></td>
+<td id="dr_${i}"></td>
+<td id="impact_${i}"></td>
+<td id="s0_${i}"></td>
+<td id="s1_${i}"></td>
+<td id="ds_${i}"></td>
+
 </tr>`;
 }
 
 html+=`<tr class="total">
-<td>Total</td>
-<td colspan="4"></td>
+<td><b>Total</b></td>
+<td></td><td></td><td></td><td></td>
 <td id="r0_total"></td>
 <td id="r1_total"></td>
+<td id="dr_total"></td>
+<td></td>
+<td></td><td></td><td></td>
 </tr>`;
 
 html+=`</table>`;
 tableContainer.innerHTML=html;
 
+updateHeaders();
+addEnterNav();
+addPasteSupport();
 calc();
 }
 
-// ================= COST =================
-function buildCost(){
+function updateHeaders(){
+let p0 = `${period0.value} (${type0.value})`;
+let p1 = `${period1.value} (${type1.value})`;
 
-let html=`<table>
-<tr>
-<th>Group</th>
-<th>Cost 0</th>
-<th>Cost 1</th>
-<th>Δ</th>
-</tr>`;
-
-for(let i=0;i<groups;i++){
-html+=`<tr>
-<td><input id="cg_${i}" value="Group ${i+1}"></td>
-<td><input id="c0_${i}"></td>
-<td><input id="c1_${i}"></td>
-<td id="cd_${i}"></td>
-</tr>`;
+h_q0.innerText = p0;
+h_q1.innerText = p1;
+h_p0.innerText = p0;
+h_p1.innerText = p1;
+h_r0.innerText = p0;
+h_r1.innerText = p1;
+h_s0.innerText = p0;
+h_s1.innerText = p1;
 }
 
-html+=`<tr class="total">
-<td>Total</td>
-<td id="c0_total"></td>
-<td id="c1_total"></td>
-<td id="cd_total"></td>
-</tr>`;
-
-html+=`</table>`;
-costTableContainer.innerHTML=html;
-
-calc();
-}
-
-// ================= CALC =================
 function calc(){
 
+updateHeaders();
+
+label0.innerText = `${period0.value} (${type0.value})`;
+label1.innerText = `${period1.value} (${type1.value})`;
+
 let R0=0,R1=0;
-let C0=0,C1=0;
+let r0=[],r1=[];
+let qEffect=0,pEffect=0;
 
-// revenue
 for(let i=0;i<groups;i++){
-let q0=+document.getElementById(`q0_${i}`)?.value||0;
-let q1=+document.getElementById(`q1_${i}`)?.value||0;
-let p0=+document.getElementById(`p0_${i}`)?.value||0;
-let p1=+document.getElementById(`p1_${i}`)?.value||0;
 
-let r0=q0*p0;
-let r1=q1*p1;
+let q0=+document.getElementById(`q0_${i}`).value||0;
+let q1=+document.getElementById(`q1_${i}`).value||0;
+let p0=+document.getElementById(`p0_${i}`).value||0;
+let p1=+document.getElementById(`p1_${i}`).value||0;
 
-R0+=r0;
-R1+=r1;
+r0[i]=FactorModel.revenue(q0,p0);
+r1[i]=FactorModel.revenue(q1,p1);
 
-if(document.getElementById(`r0_${i}`)){
-r0_${i}.innerText=format(r0);
-r1_${i}.innerText=format(r1);
-}
-}
+R0+=r0[i];
+R1+=r1[i];
 
-// costs
-for(let i=0;i<groups;i++){
-let c0=+document.getElementById(`c0_${i}`)?.value||0;
-let c1=+document.getElementById(`c1_${i}`)?.value||0;
+let e=FactorModel.decompose(q0,q1,p0,p1);
+qEffect+=e.quantity;
+pEffect+=e.price;
 
-C0+=c0;
-C1+=c1;
+let delta=r1[i]-r0[i];
 
-if(document.getElementById(`cd_${i}`)){
-let d=c1-c0;
-cd_${i}.innerHTML=`<span class="${d>=0?"red":"green"}">${format(d)}</span>`;
-}
+document.getElementById(`r0_${i}`).innerText=format(r0[i]);
+document.getElementById(`r1_${i}`).innerText=format(r1[i]);
+document.getElementById(`dr_${i}`).innerHTML=`<span class="${delta>=0?"green":"red"}">${format(delta)}</span>`;
 }
 
-// totals
-if(r0_total){
+let dR=R1-R0;
+
 r0_total.innerText=format(R0);
 r1_total.innerText=format(R1);
-}
+dr_total.innerText=format(dR);
 
-if(c0_total){
-c0_total.innerText=format(C0);
-c1_total.innerText=format(C1);
-cd_total.innerText=format(C1-C0);
-}
-
-// margin
-rev_total.innerText=format(R1);
-cost_total.innerText=format(C1);
-margin_total.innerText=format(R1-C1);
-
+R0_span.innerText=format(R0);
 R1_span.innerText=format(R1);
-dr.innerText=format(R1-R0);
+dr.innerText=format(dR);
+
+// SHARE + IMPACT
+for(let i=0;i<groups;i++){
+let s0 = R0 ? r0[i]/R0*100 : 0;
+let s1 = R1 ? r1[i]/R1*100 : 0;
+let ds = s1 - s0;
+let impact = dR ? (r1[i]-r0[i])/dR*100 : 0;
+
+document.getElementById(`s0_${i}`).innerText = s0.toFixed(1)+"%";
+document.getElementById(`s1_${i}`).innerText = s1.toFixed(1)+"%";
+document.getElementById(`ds_${i}`).innerHTML =
+`<span class="${ds>=0?"green":"red"}">${ds.toFixed(1)} pp</span>`;
+document.getElementById(`impact_${i}`).innerText = impact.toFixed(1)+"%";
 }
 
-// ================= TEST =================
+// FACTORS + ВКЛАД ПО ГРУППАМ
+let qDetails = "";
+let pDetails = "";
+for(let i=0;i<groups;i++){
+let name = document.getElementById(`g_${i}`).value;
+let q0=+document.getElementById(`q0_${i}`).value||0;
+let q1=+document.getElementById(`q1_${i}`).value||0;
+let p0=+document.getElementById(`p0_${i}`).value||0;
+let p1=+document.getElementById(`p1_${i}`).value||0;
+let e = FactorModel.decompose(q0,q1,p0,p1);
+qDetails += `${name}: ${format(e.quantity)} (${FactorModel.percent(e.quantity,dR).toFixed(1)}%)<br>`;
+pDetails += `${name}: ${format(e.price)} (${FactorModel.percent(e.price,dR).toFixed(1)}%)<br>`;
+}
+factors.innerHTML=`
+<b>Revenue Factor Analysis:</b><br>
+Quantity: ${format(qEffect)} (${FactorModel.percent(qEffect,dR).toFixed(1)}%)<br>
+Price: ${format(pEffect)} (${FactorModel.percent(pEffect,dR).toFixed(1)}%)
+<br><br>
+<b>By Groups:</b><br>
+<u>Quantity contribution:</u><br>
+${qDetails}
+<br>
+<u>Price contribution:</u><br>
+${pDetails}
+`;
+}
+
+// 🔥 НОВАЯ НАВИГАЦИЯ (ГЛАВНОЕ ИЗМЕНЕНИЕ)
+function addEnterNav(){
+
+const elements = document.querySelectorAll("input, select");
+
+elements.forEach((el,i)=>{
+
+el.addEventListener("keydown", e=>{
+
+if(el.tagName==="INPUT" && e.key==="Enter"){
+e.preventDefault();
+elements[i+1]?.focus();
+}
+
+if(el.tagName==="SELECT" && e.key==="Enter"){
+
+if(el.dataset.open==="true"){
+el.dataset.open="false";
+return;
+}
+
+e.preventDefault();
+elements[i+1]?.focus();
+}
+
+if(el.tagName==="SELECT" && (e.key==="ArrowDown" || e.key==="ArrowUp")){
+el.dataset.open="true";
+}
+
+});
+
+});
+
+}
+
+function addPasteSupport(){
+document.querySelectorAll("input").forEach(input=>{
+input.addEventListener("paste",function(e){
+let text=e.clipboardData.getData("text");
+if(!text.includes("\n")) return;
+e.preventDefault();
+
+let rows=text.trim().split("\n");
+
+rows.forEach((row,i)=>{
+if(i>=groups) return;
+let c=row.split(/\t/);
+if(c.length<5) return;
+
+document.getElementById(`g_${i}`).value=c[0];
+document.getElementById(`q0_${i}`).value=c[1];
+document.getElementById(`q1_${i}`).value=c[2];
+document.getElementById(`p0_${i}`).value=c[3];
+document.getElementById(`p1_${i}`).value=c[4];
+});
+
+calc();
+});
+});
+}
+
 function fillTest(){
 for(let i=0;i<groups;i++){
-q0_${i}.value=Math.floor(Math.random()*10)+1;
-q1_${i}.value=Math.floor(Math.random()*10)+1;
-p0_${i}.value=Math.floor(Math.random()*20000)+1000;
-p1_${i}.value=Math.floor(Math.random()*20000)+1000;
-}
-calc();
-}
-
-function fillTestCost(){
-for(let i=0;i<groups;i++){
-c0_${i}.value=Math.floor(Math.random()*20000)+1000;
-c1_${i}.value=Math.floor(Math.random()*20000)+1000;
+document.getElementById(`q0_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`q1_${i}`).value=Math.floor(Math.random()*10)+1;
+document.getElementById(`p0_${i}`).value=Math.floor(Math.random()*20000)+1000;
+document.getElementById(`p1_${i}`).value=Math.floor(Math.random()*20000)+1000;
 }
 calc();
 }
@@ -274,10 +475,30 @@ panel.style.display = panel.style.display==="block"?"none":"block";
 }
 
 document.addEventListener("input",calc);
+document.addEventListener("change",calc);
 
+fillSelectors();
 build();
-buildCost();
+addEnterNav();
 
+// tooltip hover
+document.addEventListener("mouseover", e=>{
+if(e.target.id==="g_0"){
+let hint = document.getElementById("pasteHint");
+if(hint){
+let rect = e.target.getBoundingClientRect();
+hint.style.top = (rect.bottom + window.scrollY + 6) + "px";
+hint.style.left = (rect.left + window.scrollX) + "px";
+hint.classList.add("show");
+}
+}
+});
+
+document.addEventListener("mouseout", e=>{
+if(e.target.id==="g_0"){
+document.getElementById("pasteHint")?.classList.remove("show");
+}
+});
 </script>
 
 </body>
